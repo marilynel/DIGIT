@@ -1,6 +1,10 @@
+import subprocess
+import perl
+
 from query import Query
 import os
 import sys
+import json
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
@@ -157,5 +161,13 @@ if __name__ == '__main__':
     # send working query set through filter fasta
     # or....create my own filterfasta????
 
+    #var = "."
+    #pipe = subprocess.Popen(["perl", "./practice.pl", var], stdin=subprocess.PIPE)
+    #pipe.stdin.write(var)
+    #pipe.stdin.close()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    my_cmd = "perl practice.pl"
+    my_cmd_output = os.popen(my_cmd)
+    for line in my_cmd_output:
+        print(line.rstrip())
+    print("ok")
