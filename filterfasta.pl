@@ -5,6 +5,9 @@ use Storable qw(dclone);
 use Getopt::Long;
 use Data::Dumper;
 
+# Usage:
+# filterfasta.pl --match '$chromosome' --start '$start' --end '$end' '$db'/Zm*
+
 #uses:
 #1) input fasta only; reformats to one line fasta
 #2) pulls out one seq and makes it one line fasta: use --match
