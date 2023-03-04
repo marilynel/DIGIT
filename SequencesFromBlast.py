@@ -21,13 +21,12 @@ def find_blast_output_files(dirname):
         for one_file in files:
             filename = os.path.join(subdir, one_file)
             if filename.find(".tab") != -1:
-                process_blast_output(filename)  # , all_queries)
+                process_blast_output(filename)
 
-    # return all_queries
     return
 
 
-def process_blast_output(filename):  # , all_queries):
+def process_blast_output(filename):
     '''
     Parse blast output files line by line, gathering data that will be used to
     create Query objects, which will be added to the all_queries dictionary.
@@ -79,7 +78,7 @@ def get_num_hits(line, num_hits):
     return num_hits
 
 
-def best_queries_per_genome():  # all_queries):
+def best_queries_per_genome():
     '''
     Create dictionary identifying the best BLAST hit for each query, within
     each genome.
@@ -96,16 +95,17 @@ def best_queries_per_genome():  # all_queries):
             if allele not in best_query_per_genome["query_ids"]:
                 best_query_per_genome["query_ids"].append(allele)
             if allele not in best_query_per_genome[genome]:
-                # best_query_per_genome[genome][allele] = get_best_query(genome, allele)#all_queries[genome][allele])
                 get_best_query(genome, allele)
-    # write_to_best_queries_file(best_query_per_genome)
+    write_to_best_queries_file(best_query_per_genome)
 
     return best_query_per_genome
 
 
-def allele_in_genome_write(genome_dict, allele):
-    if allele in genome_dict:
-        return genome_dict[allele].__make_best_genome_string__()
+def allele_in_genome_write(genome, allele):
+    if allele in all_queries[genome]:
+        for i in range(0, len(all_queries[genome][allele])):
+            if all_queries[genome][allele][i].best_for_genome == True:
+                return all_queries[genome][allele][i].__make_best_genome_string__()
     return "none,none,none,"
 
 
@@ -119,10 +119,9 @@ def write_to_best_queries_file(best_query_per_genome):
         for allele in best_query_per_genome["query_ids"]:
             newfile.write(
                 allele + "," +
-                allele_in_genome_write(best_query_per_genome["A188v1"], allele) +
-                allele_in_genome_write(best_query_per_genome["B73v5"], allele) +
-                allele_in_genome_write(best_query_per_genome["W22v2"], allele) +
-                "\n"
+                allele_in_genome_write("A188v1", allele) +
+                allele_in_genome_write("B73v5", allele) +
+                allele_in_genome_write("W22v2", allele) + "\n"
             )
 
             # TODO:
@@ -133,40 +132,32 @@ def write_to_best_queries_file(best_query_per_genome):
     return
 
 
-def get_best_query(genome, query):  # list_of_hits):
+def get_best_query(genome, query):
     '''
     Sort hits to identify best hit for a query. Find the percent difference
     between the best and second best hits.
     Returns:
     best_query              Query object
     '''
-    # best_query = list_of_hits[0]
     best_query = all_queries[genome][query][0]
     second_best_query = None
-    # for i in range(1, len(list_of_hits)):
     for i in range(1, len(all_queries[genome][query])):
-        # if list_of_hits[i].bit_score > best_query.bit_score:
         if all_queries[genome][query][i].bit_score > best_query.bit_score:
             second_best_query = best_query
-            # best_query = list_of_hits[i]
             best_query = all_queries[genome][query][i]
-        # elif list_of_hits[i].bit_score < best_query.bit_score:
         elif all_queries[genome][query][i].bit_score < best_query.bit_score:
-            # if not second_best_query or list_of_hits[i].bit_score > second_best_query.bit_score:
             if not second_best_query or all_queries[genome][query][i].bit_score > second_best_query.bit_score:
-                # second_best_query = list_of_hits[i]
                 second_best_query = all_queries[genome][query][i]
     # TODO: come back and make this work
     # if second_best_query:
     #    best_query.diff = abs(
     #        ((best_query.bit_score - second_best_query.bit_score) / (best_query.bit_score + second_best_query.bit_score)) / 2) * 100
 
-    # best_query.best_for_genome = True
     for i in range(0, len(all_queries[genome][query])):
         if all_queries[genome][query][i] == best_query:
             all_queries[genome][query][i].best_for_genome = True
 
-    return  # best_query
+    return
 
 
 def allele_in_genome_comp(genome_dict, allele):
@@ -196,7 +187,7 @@ def best_queries(best_query_per_genome):
     pass
 
 
-def queries_to_json(filename):  # data, filename):
+def queries_to_json(filename):
     '''
     Converts dictionary to JSON object and writes it to a file.
     '''
@@ -221,9 +212,8 @@ def queries_to_json(filename):  # data, filename):
 
 
 if __name__ == '__main__':
-    # all_queries =
     find_blast_output_files(sys.argv[1])
-    # queries_to_json("AllBlastDataBefore.json")
+
     # all queries is a dict with structure:
     #   {
     #       databaseA:
@@ -238,15 +228,10 @@ if __name__ == '__main__':
     #           }
     #   }   etc.
 
-    best_query_per_genome = best_queries_per_genome()  # all_queries)
-    # print("after best_query_per_genome")
-    # print("before working query set")
+    best_query_per_genome = best_queries_per_genome()
+
     # working_query_set = best_queries(best_query_per_genome)
-    # print("after working query set")
-    # print(working_query_set)
-    # queries_to_json(working_query_set, "outfile.json")
-    # for query in working_query_set:
-    #    print(dict(query))
+
     queries_to_json("AllBlastData.json")
 
     ''' PERL STUFF

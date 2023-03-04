@@ -44,6 +44,7 @@ class Query:
         self.primer_left_penalty = -1                                   # from Primer3 output
         self.primer_right_penalty = -1                                  # from Primer3 output
         self.best_for_genome = False
+        self.best_query = False #TODO: set this to determine working set
         #self.set_primer_side()
 
     def __set_values__(self):
