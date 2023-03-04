@@ -1,7 +1,7 @@
 import json
 
 class Query:
-    def __init__(self, line, db_id, num_hits):
+    def __init__(self, line, genome, num_hits):
         items = line.split('\t')
         self.query = items[0]                                           # R id number
         self.chromosome = items[1]                                      # blast output
@@ -15,7 +15,7 @@ class Query:
         self.s_end = int(items[9])                                      # blast output
         self.evalue = items[10]                                         # blast output
         self.bit_score = float(items[11])                               # blast output
-        self.genome = db_id                                             # blast output
+        self.genome = genome                                             # blast output
         self.num_hits = num_hits                                        # blast output
         self.diff = 0                                                   # calculated with parser
         self.strand = 0 #self.strand_direction()                           # calculated with class method
