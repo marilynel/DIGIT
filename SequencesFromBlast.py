@@ -78,27 +78,23 @@ def get_num_hits(line, num_hits):
     return num_hits
 
 
-def best_queries_per_genome():
+def set_best_for_genome():
     '''
     Create dictionary identifying the best BLAST hit for each query, within
     each genome.
     '''
-    best_query_per_genome = {
-        "query_ids": [],
-        "A188v1": {},
-        "B73v5": {},
-        "W22v2": {}
-    }
+    list_of_queries = []
 
     for genome in all_queries:
         for allele in all_queries[genome]:
-            if allele not in best_query_per_genome["query_ids"]:
-                best_query_per_genome["query_ids"].append(allele)
-            if allele not in best_query_per_genome[genome]:
-                get_best_query(genome, allele)
-    write_to_best_queries_file(best_query_per_genome)
+            if allele not in list_of_queries:
+                list_of_queries.append(allele)
+            # if allele not in best_query_per_genome[genome]:
+            # if all_queries[genome][allele]
+            get_best_query(genome, allele)
+    write_to_best_queries_file(list_of_queries)
 
-    return best_query_per_genome
+    return list_of_queries
 
 
 def allele_in_genome_write(genome, allele):
@@ -109,14 +105,14 @@ def allele_in_genome_write(genome, allele):
     return "none,none,none,"
 
 
-def write_to_best_queries_file(best_query_per_genome):
+def write_to_best_queries_file(list_of_queries):
     with open("best_queries_by_genome.csv", "w+") as newfile:
         newfile.write(
             "query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_sc" +
             "ore,B73_num_hits,B73_qstart_status,W22_bit_score,W22_num_hits,W2" +
             "2_qstart_status,best_genomes\n"
         )
-        for allele in best_query_per_genome["query_ids"]:
+        for allele in list_of_queries:
             newfile.write(
                 allele + "," +
                 allele_in_genome_write("A188v1", allele) +
@@ -160,22 +156,25 @@ def get_best_query(genome, query):
     return
 
 
-def allele_in_genome_comp(genome_dict, allele):
-    if allele in genome_dict:
-        return genome_dict[allele].bit_score
+def allele_in_genome_comp(genome, allele):
+    if allele in all_queries[genome]:
+        for i in range(0, len(all_queries[genome][allele])):
+            if all_queries[genome][allele][i].best_for_genome == True:
+                return all_queries[genome][allele][i].bit_score
     return -1
 
 
-def best_queries(best_query_per_genome):
+def set_best_query(list_of_queries):
     '''
     working_query_set = []
-    for query in best_query_per_genome["query_ids"]:
+    '''
+    for query in list_of_queries:
         best_bit_scores = [
-            allele_in_genome_comp(best_query_per_genome["A188v1"],query),
-            allele_in_genome_comp(best_query_per_genome["B73v5"],query),
-            allele_in_genome_comp(best_query_per_genome["W22v2"],query),
+            allele_in_genome_comp("A188v1", query),
+            allele_in_genome_comp("B73v5", query),
+            allele_in_genome_comp("W22v2", query),
         ]
-
+    '''
         if best_query_per_genome["B73v5"][query].bit_score == max(best_bit_scores):
             working_query_set.append(best_query_per_genome["B73v5"][query])
         elif best_query_per_genome["W22v2"][query].bit_score == max(best_bit_scores):
@@ -184,7 +183,6 @@ def best_queries(best_query_per_genome):
             working_query_set.append(best_query_per_genome["A188v1"][query])
     return working_query_set
     '''
-    pass
 
 
 def queries_to_json(filename):
@@ -228,9 +226,9 @@ if __name__ == '__main__':
     #           }
     #   }   etc.
 
-    best_query_per_genome = best_queries_per_genome()
+    list_of_queries = set_best_for_genome()
 
-    # working_query_set = best_queries(best_query_per_genome)
+    set_best_query(list_of_queries)
 
     queries_to_json("AllBlastData.json")
 
