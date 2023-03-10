@@ -20,6 +20,21 @@ import glob
 #   }   etc.
 
 
+# all queries is a dict with structure:
+#   {
+#       databaseA:
+#           {
+#               query1:[QueryObj, QueryObj, QueryObj],
+#               query2:[QueryObj]
+#           }
+#       databaseB:
+#           {
+#               query1:[QueryObj, QueryObj, QueryObj],
+#               query2:[QueryObj]
+#           }
+#   }   etc.
+
+
 all_queries = {
     "A188v1": {},
     "B73v5": {},
@@ -29,24 +44,24 @@ all_queries = {
 
 def find_blast_output_files(dirname):
     '''
-    This function goes to the specified directory, locates relevant (.tab)
-    files, and sends the file names to function process_blast_output() for
+    This function goes to the specified directory, locates relevant (.tab) 
+    files, and sends the file names to function process_blast_output() for 
     parsing.
     '''
     for subdir, dirs, files in os.walk(dirname):
         for one_file in files:
             filename = os.path.join(subdir, one_file)
             if filename.find(".tab") != -1:
-                process_blast_output(filename)
+                process_blast_output(filename) 
 
     return
 
 
 def process_blast_output(filename):
     '''
-    Parse blast output files line by line, gathering data that will be used to
-    create Query objects, which will be added to the all_queries dictionary.
-    Functions get_num_hits() and get_genome() are called to help parse hash (#)
+    Parse blast output files line by line, gathering data that will be used to 
+    create Query objects, which will be added to the all_queries dictionary. 
+    Functions get_num_hits() and get_genome() are called to help parse hash (#) 
     lines.
     '''
     genome = ""
@@ -54,8 +69,8 @@ def process_blast_output(filename):
     with open(filename, "r+") as blastfile:
         for line in blastfile:
             if line[0] == '#':
-                # hash lines may hold data that will be necessary for Query
-                # object initialization. genome and num_hits will remain
+                # hash lines may hold data that will be necessary for Query 
+                # object initialization. genome and num_hits will remain 
                 # unchanged until after all of the hits for that query are read
                 genome = get_genome(line, genome)
                 num_hits = get_num_hits(line, num_hits)
@@ -63,7 +78,7 @@ def process_blast_output(filename):
                 new_query = Query(line, genome, num_hits)
                 new_query.__set_values__()
                 if new_query.query not in all_queries[genome]:
-                    # Add that query to all_queries[genome] as a key, value
+                    # Add that query to all_queries[genome] as a key, value 
                     # being an empty list
                     all_queries[genome][new_query.query] = []
                 # Place Query object in all_queries object
@@ -85,7 +100,7 @@ def get_genome(line, genome):
 def get_num_hits(line, num_hits):
     '''
     Parse a line for string indicating the number of hits for that query in a
-    genome. If line does not have that string, return num_hits as original
+    genome. If line does not have that string, return num_hits as original 
     value.
     '''
     blast_data = line.split(' ')
@@ -94,9 +109,9 @@ def get_num_hits(line, num_hits):
     return num_hits
 
 
-def set_best_for_genome():
+def set_best_for_genome(): 
     '''
-    Create dictionary identifying the best BLAST hit for each query, within
+    Create dictionary identifying the best BLAST hit for each query, within 
     each genome.
     '''
     list_of_queries = []
@@ -105,9 +120,9 @@ def set_best_for_genome():
         for allele in all_queries[genome]:
             if allele not in list_of_queries:
                 list_of_queries.append(allele)
-            # if allele not in best_query_per_genome[genome]:
-            # if all_queries[genome][allele]
-            get_best_query(genome, allele)
+            #if allele not in best_query_per_genome[genome]:
+            #if all_queries[genome][allele]
+            get_best_query(genome,allele)
     write_to_best_queries_file(list_of_queries)
 
     return list_of_queries
@@ -116,6 +131,7 @@ def set_best_for_genome():
 def allele_in_genome_write(genome, allele, best_bit_score):
     '''
     Find the specific hit that was specified as the best for that query ID and
+
     that genome (Query.best_for_genome == True) and return a string reporting
     data for the best_queries_by_genome.csv outfile.
     '''
@@ -139,7 +155,6 @@ def best_genomes_write(best_bit_score):
         else:
             best_bit_score[genome] = 0
     return str(genome_list)
-
 
 def working_query_selection(genome, allele):
     '''
@@ -168,14 +183,15 @@ def pick_genome(allele, best_bit_score):
 def write_to_best_queries_file(list_of_queries):
     with open("best_queries_by_genome.csv", "w+") as newfile:
         newfile.write(
-            "query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_sc" +
-            "ore,B73_num_hits,B73_qstart_status,W22_bit_score,W22_num_hits,W2" +
+            "query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_sc"+
+            "ore,B73_num_hits,B73_qstart_status,W22_bit_score,W22_num_hits,W2"+
             "2_qstart_status,best_genomes\n"
         )
         for allele in list_of_queries:
             best_bit_score = {}
             newfile.write(
                 allele + "," +
+
                 allele_in_genome_write("A188v1", allele, best_bit_score) +
                 allele_in_genome_write("B73v5", allele, best_bit_score) +
                 allele_in_genome_write("W22v2", allele, best_bit_score) +
@@ -183,12 +199,13 @@ def write_to_best_queries_file(list_of_queries):
                 "\n"
             )
             pick_genome(allele, best_bit_score)
+
     return
 
 
 def get_best_query(genome, query):
     '''
-    Sort hits to identify best hit for a query. Find the percent difference
+    Sort hits to identify best hit for a query. Find the percent difference 
     between the best and second best hits.
     Returns:
     best_query              Query object
@@ -203,7 +220,7 @@ def get_best_query(genome, query):
             if not second_best_query or all_queries[genome][query][i].bit_score > second_best_query.bit_score:
                 second_best_query = all_queries[genome][query][i]
     # TODO: come back and make this work
-    # if second_best_query:
+    #if second_best_query:
     #    best_query.diff = abs(
     #        ((best_query.bit_score - second_best_query.bit_score) / (best_query.bit_score + second_best_query.bit_score)) / 2) * 100
 
@@ -225,13 +242,14 @@ def allele_in_genome_comp(genome, allele):
 def set_best_query(list_of_queries):
     for query in list_of_queries:
         best_bit_scores = [
-            allele_in_genome_comp("A188v1", query),
-            allele_in_genome_comp("B73v5", query),
-            allele_in_genome_comp("W22v2", query),
+            allele_in_genome_comp("A188v1",query),
+            allele_in_genome_comp("B73v5",query),
+            allele_in_genome_comp("W22v2",query),
         ]
 
 
-def queries_to_json(filename):
+
+def queries_to_json(filename): 
     '''
     Converts dictionary to JSON object and writes it to a file.
     '''
@@ -248,17 +266,20 @@ def queries_to_json(filename):
             for hit in all_queries[database][query]:
                 json_object[database][query] = dict(hit)
 
-    new_json_object = json.dumps(json_object, indent=4)
+    new_json_object = json.dumps(json_object, indent = 4)
     with open(filename, "w") as outfile:
         outfile.write(new_json_object)
-
+     
     return
 
-
+       
 if __name__ == '__main__':
     find_blast_output_files(sys.argv[1])
-    list_of_queries = set_best_for_genome()
+
+    list_of_queries = set_best_for_genome() 
+
     set_best_query(list_of_queries)
+    
     queries_to_json("AllBlastData.json")
 
     # PERL STUFF
