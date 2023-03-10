@@ -264,7 +264,7 @@ if __name__ == '__main__':
     # PERL STUFF
 
     # TODO: this doesn't work yet, I'm still figuring out why
-    
+
     for gen in all_queries:
         for q in all_queries[gen]:
             for i in range(0, len(all_queries[gen][q])):
