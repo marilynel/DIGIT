@@ -20,21 +20,6 @@ import glob
 #   }   etc.
 
 
-# all queries is a dict with structure:
-#   {
-#       databaseA:
-#           {
-#               query1:[QueryObj, QueryObj, QueryObj],
-#               query2:[QueryObj]
-#           }
-#       databaseB:
-#           {
-#               query1:[QueryObj, QueryObj, QueryObj],
-#               query2:[QueryObj]
-#           }
-#   }   etc.
-
-
 all_queries = {
     "A188v1": {},
     "B73v5": {},
@@ -128,10 +113,10 @@ def set_best_for_genome():
     return list_of_queries
 
 
-def allele_in_genome_write(genome, allele, best_bit_score):
-    '''
-    Find the specific hit that was specified as the best for that query ID and
 
+def allele_in_genome_write(genome,allele,best_bit_score):
+    '''
+    Find the specific hit that was specified as the best for that query ID and 
     that genome (Query.best_for_genome == True) and return a string reporting
     data for the best_queries_by_genome.csv outfile.
     '''
@@ -191,15 +176,13 @@ def write_to_best_queries_file(list_of_queries):
             best_bit_score = {}
             newfile.write(
                 allele + "," +
-
-                allele_in_genome_write("A188v1", allele, best_bit_score) +
+                allele_in_genome_write("A188v1", allele, best_bit_score) + 
                 allele_in_genome_write("B73v5", allele, best_bit_score) +
-                allele_in_genome_write("W22v2", allele, best_bit_score) +
-                best_genomes_write(best_bit_score) +
+                allele_in_genome_write("W22v2", allele, best_bit_score) + 
+                best_genomes_write(best_bit_score) + 
                 "\n"
             )
-            pick_genome(allele, best_bit_score)
-
+            pick_genome(allele, best_bit_score) 
     return
 
 
@@ -247,6 +230,7 @@ def set_best_query(list_of_queries):
             allele_in_genome_comp("W22v2",query),
         ]
 
+    
 
 
 def queries_to_json(filename): 
@@ -264,8 +248,8 @@ def queries_to_json(filename):
             if query not in json_object[database]:
                 json_object[database][query] = []
             for hit in all_queries[database][query]:
-                json_object[database][query] = dict(hit)
-
+                json_object[database][query].append(dict(hit))
+    #print(json_object)
     new_json_object = json.dumps(json_object, indent = 4)
     with open(filename, "w") as outfile:
         outfile.write(new_json_object)
@@ -275,64 +259,42 @@ def queries_to_json(filename):
        
 if __name__ == '__main__':
     find_blast_output_files(sys.argv[1])
-
     list_of_queries = set_best_for_genome() 
-
     set_best_query(list_of_queries)
-    
     queries_to_json("AllBlastData.json")
-
-    # PERL STUFF
-
-    # TODO: this doesn't work yet, I'm still figuring out why
+    #print(all_queries)
+    #PERL STUFF
 
     for gen in all_queries:
         for q in all_queries[gen]:
-            for i in range(0, len(all_queries[gen][q])):
+            for i in range(0,len(all_queries[gen][q])):
                 if all_queries[gen][q][i].best_query == True:
-                    # $1 = query
-                    # $2 = chromosome
-                    # $3 = wildtype start
-                    # $4 = wildtype end
-                    # $5 = upper start
-                    # $6 = upper end
-                    # $7 = lower start
-                    # $8 = lower end
-                    # $9 = genome
                     subprocess.run(
                         [
                             "SGE_Batch",
-                            "-c",
-                            f"./filterfasta.sh {all_queries[gen][q][i].query} {all_queries[gen][q][i].chromosome} {all_queries[gen][q][i].wildtype_coordinates[0]} {all_queries[gen][q][i].wildtype_coordinates[1]} {all_queries[gen][q][i].upper_coordinates[0]} {all_queries[gen][q][i].upper_coordinates[1]} {all_queries[gen][q][i].lower_coordinates[0]} {all_queries[gen][q][i].lower_coordinates[1]} {gen[:-2]}",
-                            # "filterfasta.sh",
-                            # all_queries[gen][q][i].query,
-                            # all_queries[gen][q][i].chromosome,
-                            # str(all_queries[gen][q][i].wildtype_coordinates[1]),
-                            # str(all_queries[gen][q][i].upper_coordinates[0]),
-                            # str(all_queries[gen][q][i].upper_coordinates[1]),
-                            # str(all_queries[gen][q][i].lower_coordinates[0]),
-                            # str(all_queries[gen][q][i].lower_coordinates[1]),
-                            # gen[:-2],
+                            "-c",  
+                            f"./filterfasta.sh {all_queries[gen][q][i].__make_filterfasta_input()}"     # this line has not yet been tested
+                            #f"./filterfasta.sh {all_queries[gen][q][i].query} {all_queries[gen][q][i].chromosome} {all_queries[gen][q][i].wildtype_coordinates[0]} {all_queries[gen][q][i].wildtype_coordinates[1]} {all_queries[gen][q][i].upper_coordinates[0]} {all_queries[gen][q][i].upper_coordinates[1]} {all_queries[gen][q][i].lower_coordinates[0]} {all_queries[gen][q][i].lower_coordinates[1]} {gen[:-2]}",
+                            #"filterfasta.sh",
+                            #all_queries[gen][q][i].query,
+                            #all_queries[gen][q][i].chromosome,
+                            #str(all_queries[gen][q][i].wildtype_coordinates[1]),
+                            #str(all_queries[gen][q][i].upper_coordinates[0]),
+                            #str(all_queries[gen][q][i].upper_coordinates[1]),
+                            #str(all_queries[gen][q][i].lower_coordinates[0]),
+                            #str(all_queries[gen][q][i].lower_coordinates[1]),
+                            #gen[:-2],
                             "-q",
-                            "bpp",
-                            "-P",
+                            "bpp", 
+                            "-P", 
                             "8",
                             "-r",
                             f"sge.{all_queries[gen][q][i].query}"
                         ]
                     )
-                    exit()
 
-    # for genome in all_queries:
-    #    for query_list in all_queries[genome]:
-    #        for i in range(0,len(all_queries[genome][query_list])):
-    #            if all_queries[genome][query_list][i].best_query == True:
-    #                try:
-    #                    subprocess.run(["practice.sh", all_queries[genome][query_list][i].query])
-    #                except:
-    #                    print("nope")
-    #                    exit(-1)
 
+    
     # filterfasta Usage:
     # filterfasta.pl --match '$chromosome' --start '$start' --end '$end' '$db'/Zm*
 '''
@@ -341,7 +303,7 @@ go through queries in all_queries[genome] (for each genome)
     check if Query.best_query == True
         call shell one or three times? which would be better?
         filterfasta.pl --match '$chromosome' --start '$start' --end '$end' '$db'/Zm*
-
+        
 
 Upper
 chromosome          Query.chromosome            string
