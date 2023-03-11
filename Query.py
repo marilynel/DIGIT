@@ -126,3 +126,9 @@ class Query:
         # now 'yield' through the items
         for x,y in iters.items():
             yield x,y
+    def __make_filterfasta_input(self):
+        return f"{self.query} {self.chromosome} " + 
+        f"{self.wildtype_coordinates[0]} {self.wildtype_coordinates[1]} " + 
+        f"{self.upper_coordinates[0]} {self.upper_coordinates[1]} " + 
+        f"{self.lower_coordinates[0]} {self.lower_coordinates[1]} " +
+        f"{self.genome[:-2]}"
