@@ -61,12 +61,26 @@ def store_and_construct_sequences(filename, allele):
 
 
 def main():
-    create_query_struct("AllBlastData05.json")
+    create_query_struct("AllBlastData06.json")
     find_filterfasta_output_files("filterfasta_files")
     with open("primer3_input.txt", "w") as p3file:
         for allele in queries_working_set:
             p3file.write(queries_working_set[allele].__create_primer3_input__())
 
+    #SGE_Batch -c 'primer3_core '$prein'plus_A'$rightsuff' > '$preout'plus_A'$rightsuff'' -q bpp -P 8 -r sge.run_primer3_$now
+    subprocess.run(
+        [
+            "SGE_Batch",
+            "-c",
+            "primer3_core primer3_input.txt > primer3_output.txt",
+            "-q",
+            "bpp",
+            "-P",
+            "8",
+            "-r",
+            "sge.primer3"
+        ]
+    )
 
 
     # TODO:
