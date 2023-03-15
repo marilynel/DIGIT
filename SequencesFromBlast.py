@@ -44,9 +44,9 @@ def find_blast_output_files(dirname):
 
 def process_blast_output(filename):
     '''
-    Parse blast output files line by line, gathering data that will be used to 
-    create Query objects, which will be added to the all_queries dictionary. 
-    Functions get_num_hits() and get_genome() are called to help parse hash (#) 
+    Parse blast output files line by line, gathering data that will be used to
+    create Query objects, which will be added to the all_queries dictionary.
+    Functions get_num_hits() and get_genome() are called to help parse hash (#)
     lines.
     '''
     genome = ""
@@ -54,8 +54,8 @@ def process_blast_output(filename):
     with open(filename, "r+") as blastfile:
         for line in blastfile:
             if line[0] == '#':
-                # hash lines may hold data that will be necessary for Query 
-                # object initialization. genome and num_hits will remain 
+                # hash lines may hold data that will be necessary for Query
+                # object initialization. genome and num_hits will remain
                 # unchanged until after all of the hits for that query are read
                 genome = get_genome(line, genome)
                 num_hits = get_num_hits(line, num_hits)
@@ -63,7 +63,7 @@ def process_blast_output(filename):
                 new_query = Query(line, genome, num_hits)
                 new_query.__set_values__()
                 if new_query.query not in all_queries[genome]:
-                    # Add that query to all_queries[genome] as a key, value 
+                    # Add that query to all_queries[genome] as a key, value
                     # being an empty list
                     all_queries[genome][new_query.query] = []
                 # Place Query object in all_queries object
@@ -85,7 +85,7 @@ def get_genome(line, genome):
 def get_num_hits(line, num_hits):
     '''
     Parse a line for string indicating the number of hits for that query in a
-    genome. If line does not have that string, return num_hits as original 
+    genome. If line does not have that string, return num_hits as original
     value.
     '''
     blast_data = line.split(' ')
@@ -96,7 +96,7 @@ def get_num_hits(line, num_hits):
 
 def set_best_for_genome():
     '''
-    Create dictionary identifying the best BLAST hit for each query, within 
+    Create dictionary identifying the best BLAST hit for each query, within
     each genome.
     '''
     list_of_queries = []
@@ -115,7 +115,7 @@ def set_best_for_genome():
 
 def allele_in_genome_write(genome, allele, best_bit_score):
     '''
-    Find the specific hit that was specified as the best for that query ID and 
+    Find the specific hit that was specified as the best for that query ID and
     that genome (Query.best_for_genome == True) and return a string reporting
     data for the best_queries_by_genome.csv outfile.
     '''
@@ -188,7 +188,7 @@ def write_to_best_queries_file(list_of_queries):
 
 def get_best_query(genome, query):
     '''
-    Sort hits to identify best hit for a query. Find the percent difference 
+    Sort hits to identify best hit for a query. Find the percent difference
     between the best and second best hits.
     Returns:
     best_query              Query object
@@ -247,7 +247,6 @@ def queries_to_json(filename):
                 json_object[database][query] = []
             for hit in all_queries[database][query]:
                 json_object[database][query].append(dict(hit))
-    # print(json_object)
     new_json_object = json.dumps(json_object, indent=4)
     with open(filename, "w") as outfile:
         outfile.write(new_json_object)
@@ -260,71 +259,34 @@ if __name__ == '__main__':
     list_of_queries = set_best_for_genome()
     set_best_query(list_of_queries)
     queries_to_json("AllBlastData.json")
-    # print(all_queries)
-    # PERL STUFF
-
-    for gen in all_queries:
-        for q in all_queries[gen]:
-            for i in range(0, len(all_queries[gen][q])):
-                if all_queries[gen][q][i].best_query == True:
-                    subprocess.run(
-                        [
-                            "SGE_Batch",
-                            "-c",
-                            f"./filterfasta.sh {all_queries[gen][q][i].__make_filterfasta_input()}"  # this line has not yet been tested
-                            # f"./filterfasta.sh {all_queries[gen][q][i].query} {all_queries[gen][q][i].chromosome} {all_queries[gen][q][i].wildtype_coordinates[0]} {all_queries[gen][q][i].wildtype_coordinates[1]} {all_queries[gen][q][i].upper_coordinates[0]} {all_queries[gen][q][i].upper_coordinates[1]} {all_queries[gen][q][i].lower_coordinates[0]} {all_queries[gen][q][i].lower_coordinates[1]} {gen[:-2]}",
-                            # "filterfasta.sh",
-                            # all_queries[gen][q][i].query,
-                            # all_queries[gen][q][i].chromosome,
-                            # str(all_queries[gen][q][i].wildtype_coordinates[1]),
-                            # str(all_queries[gen][q][i].upper_coordinates[0]),
-                            # str(all_queries[gen][q][i].upper_coordinates[1]),
-                            # str(all_queries[gen][q][i].lower_coordinates[0]),
-                            # str(all_queries[gen][q][i].lower_coordinates[1]),
-                            # gen[:-2],
-                            "-q",
-                            "bpp",
-                            "-P",
-                            "8",
-                            "-r",
-                            f"sge.{all_queries[gen][q][i].query}"
-                        ]
-                    )
 
     # filterfasta Usage:
     # filterfasta.pl --match '$chromosome' --start '$start' --end '$end' '$db'/Zm*
-'''
-Input:
-go through queries in all_queries[genome] (for each genome)
-    check if Query.best_query == True
-        call shell one or three times? which would be better?
-        filterfasta.pl --match '$chromosome' --start '$start' --end '$end' '$db'/Zm*
-
-
-Upper
-chromosome          Query.chromosome            string
-start               Query.upper_coordinates[0]  int? may need to convert to string
-end                 Query.upper_coordinates[1]  int? may need to convert to string
-database            Query.genome
-
-Lower
-start               Query.lower_coordinates[0]
-end                 Query.lower_coordinates[1]
-
-WT
-start               Query.wildtype_coordinates[0]
-end                 Query.wildtype_coordinates[1]
-
-can I go straight to SGE_Batch from the subprocess?
-
-could I do one fasta file? just to make life a little easier
-    -> that might be weird with multiple sge jobs
-    -> maybe instead a new fasta file for each query?
-
-    wt_name=${query}_in_${db}_wildtype_${strand}_${chromosome}_${wt_start}_${wt_end}
-    echo ">$query,$chromosome,$strand,$db,wildtype,s_start placeholder" >> data/filterfasta/filterfasta_output/$temp/$query/$wt_name.fasta
-    SGE_Batch -c 'part1/filterfasta.pl --match '$chromosome' --start '$wt_start' --end '$wt_end' resources/part0/reference_genomes/'$db'/Zm* >> data/filterfasta/filterfasta_output/'$temp'/'$query'/'$wt_name'.fasta' -q bpp -P 8 -r sge.${temp}_wild_${query}_${now}
-
-
-
-'''
+    if sys.argv[2] == "true":
+        for gen in all_queries:
+            for q in all_queries[gen]:
+                for i in range(0, len(all_queries[gen][q])):
+                    if all_queries[gen][q][i].best_query == True:
+                        subprocess.run(
+                            [
+                                "SGE_Batch",
+                                "-c",
+                                f"./filterfasta.sh {all_queries[gen][q][i].__make_filterfasta_input__()}"  # this line has not yet been tested
+                                # f"./filterfasta.sh {all_queries[gen][q][i].query} {all_queries[gen][q][i].chromosome} {all_queries[gen][q][i].wildtype_coordinates[0]} {all_queries[gen][q][i].wildtype_coordinates[1]} {all_queries[gen][q][i].upper_coordinates[0]} {all_queries[gen][q][i].upper_coordinates[1]} {all_queries[gen][q][i].lower_coordinates[0]} {all_queries[gen][q][i].lower_coordinates[1]} {gen[:-2]}",
+                                # "filterfasta.sh",
+                                # all_queries[gen][q][i].query,
+                                # all_queries[gen][q][i].chromosome,
+                                # str(all_queries[gen][q][i].wildtype_coordinates[1]),
+                                # str(all_queries[gen][q][i].upper_coordinates[0]),
+                                # str(all_queries[gen][q][i].upper_coordinates[1]),
+                                # str(all_queries[gen][q][i].lower_coordinates[0]),
+                                # str(all_queries[gen][q][i].lower_coordinates[1]),
+                                # gen[:-2],
+                                "-q",
+                                "bpp",
+                                "-P",
+                                "8",
+                                "-r",
+                                f"sge.{all_queries[gen][q][i].query}"
+                            ]
+                        )

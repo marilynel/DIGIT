@@ -68,6 +68,9 @@ dsgfp_revcomp = "TAGGGATGAAAACGGTCGGGAACGGTCGGTAAAATACCTCTACCGTTTTCATTTTCA" + \
                 "CGTTTTCGTTTTTTACCTCGGGTTCGAAATCGATCGGGATAAAACTAACAAAATCGGTTATACGATAAC" + \
                 "GGTCGGTACGGGATTTTCCCATCCTACTTTCATCCCTA"
 
+gfp3utr = "TGCAAGCTCGAGTTTCTCCA"  # gfp3utr
+dsgg3 = "TTGGAGCTGGCCATATTGCAG"  # dsgg3
+
 
 class Query:
     def __init__(self, line, genome, num_hits):
@@ -75,104 +78,109 @@ class Query:
             items = line.split('\t')
         else:
             items = [i == 0 for i in range(12)]
-        self.query = items[0]  # R id number
-        self.chromosome = items[1]  # blast output
+        self.query = items[0]  # allele / R number / query
+        self.chromosome = items[1]  # chr location of allele instance
         self.per_identity = items[2]  # blast output
         self.alignment_length = items[3]  # blast output
         self.mismatches = items[4]  # blast output
         self.gap_opens = items[5]  # blast output
         self.q_start = int(items[6])  # blast output
         self.q_end = int(items[7])  # blast output
-        self.s_start = int(items[8])  # blast output
-        self.s_end = int(items[9])  # blast output
+        self.s_start = int(items[8])  # beginning coordinate for query
+        self.s_end = int(items[9])  # ending coordinate for query
         self.evalue = items[10]  # blast output
         self.bit_score = float(items[11])  # blast output
-        self.genome = genome  # blast output
-        self.num_hits = num_hits  # blast output
-        self.diff = 0  # calculated with parser
-        self.strand = 0  # self.strand_direction()                           # calculated with class method
-        self.q_start_status = None  # self.set_q_start_status()                 # calculated with class method
-        self.bit_score_status = None  # self.set_bit_score_status()             # calculated with class method
-        self.primer_name_left = None  # created for primer3 input
-        self.primer_name_right = None  # created for primer3 input
-        self.side_gfp3utr = None  # blast output
-        self.side_3dsgg = None  # blast output
+        self.genome = genome  # genome database where allele instance was found
+        self.num_hits = num_hits  # total number of instances for query in genome
+        self.diff = 0  # TODO
+        self.strand = 0  # plus or minus strand, calculated with s_start and s_end
+        self.q_start_status = False  # true if s_start = 1, else false
+        self.bit_score_status = False  # true if bit_score >= 80, else false
+        self.primer_name_left = None  # left primer name, determined by strand direction
+        self.primer_name_right = None  # right primer name, determined by strand direction
+        self.side_gfp3utr = None  # normal = left primer, match with right; revcomp = right primer, match with left
+        self.side_3dsgg = None  # normal = left primer, match with right; revcomp = right primer, match with left
         self.upper_sequence = None  # from filterfasta
-        self.lower_sequence = None  # from filter fasta
-        self.insertion_sequence = None  # from filter fasta
+        self.lower_sequence = None  # from filterfasta
+        self.insertion_sequence = None  # calculated with filterfasta results
         self.wildtype_sequence = None  # from filterfasta
-        self.primer_sequence_left = "FAIL"  # from Primer3 output
-        self.primer_sequence_right = "FAIL"  # from Primer3 output
-        self.left_primer_position = -1  # from Primer3 output
-        self.right_primer_position = -1  # from Primer3 output
-        self.product_size_gfp3utr = -1  # from Primer3 output
-        self.product_size_3dsgg = -1  # from Primer3 output
-        self.productWT_verify_size = -1  # from Primer3 verification output
-        self.upper_coordinates = [-1, -1]  # self.get_upper_coordinates()           # blast output
-        self.lower_coordinates = [-1, -1]  # self.get_lower_coordinates()           # blast output
-        self.wildtype_coordinates = [-1, -1]  # self.get_wt_coordinates()           # blast output
+        self.primer_sequence_left = "FAIL"  # TODO
+        self.primer_sequence_right = "FAIL"  # TODO
+        self.left_primer_position = -1  # TODO
+        self.right_primer_position = -1  # TODO
+        self.product_size_gfp3utr = -1  # TODO
+        self.product_size_3dsgg = -1  # TODO
+        self.productWT_verify_size = -1  # TODO
+        self.upper_coordinates = [-1, -1]  # calculated with strand and s_start
+        self.lower_coordinates = [-1, -1]  # calculated with strand and s_start
+        self.wildtype_coordinates = [-1, -1]  # calculated with strand and s_start
         self.tm = -1  # TODO: where does this come from?
-        self.primer_pair_penalty = -1  # from Primer3 output
-        self.primer_left_penalty = -1  # from Primer3 output
-        self.primer_right_penalty = -1  # from Primer3 output
-        self.best_for_genome = False
-        self.best_query = False  # TODO: set this to determine working set
-        # self.set_primer_side()
+        self.primer_pair_penalty = -1  # TODO
+        self.primer_left_penalty = -1  # TODO
+        self.primer_right_penalty = -1  # TODO
+        self.best_for_genome = False  # true if this allele has best bit score across all instances in genome
+        self.best_query = False  # true if this instance in this genome is the best for all versions of the allele
 
     def __set_values__(self):
-        self.strand = self.__strand_direction__()  # calculated with class method
-        self.q_start_status = self.__set_q_start_status__()  # calculated with class method
-        self.bit_score_status = self.__set_bit_score_status__()
-        self.upper_coordinates = self.__get_upper_coordinates__()  # blast output
-        self.lower_coordinates = self.__get_lower_coordinates__()  # blast output
-        self.wildtype_coordinates = self.__get_wt_coordinates__()  # blast output
-        self.__set_primer_side__()
+        self.__strand_direction__()
+        self.__set_q_start_status__()
+        self.__set_bit_score_status__()
+        self.__get_upper_coordinates__()
+        self.__get_lower_coordinates__()
+        self.__get_wt_coordinates__()
 
     def __make_best_genome_string__(self):
+        # For printing to best_queries_by_genome.csv
         return f"{self.bit_score},{self.num_hits},{self.q_start_status},"
 
     def __print_query__(self):
+        # For testing
         print(f"Query: {self.query}\tDatabase: {self.genome}\tBit Score: {self.bit_score}")
         print(f"Upper Sequence: {self.upper_sequence}")
         print(f"Insertion Sequence: {self.insertion_sequence}")
 
     def __get_upper_coordinates__(self):
         if self.strand == 1:
-            return [self.s_start, self.s_start + 2000]
+            self.upper_coordinates = [self.s_start, self.s_start + 2000]
         elif self.strand == -1:
-            return [self.s_start - 7, self.s_start + 2000]
+            self.upper_coordinates = [self.s_start - 7, self.s_start + 2000]
         else:
-            return [-1, -1]
+            self.upper_coordinates = [-1, -1]
 
     def __get_lower_coordinates__(self):
         if self.strand == 1:
-            return [self.s_start - 2000, self.s_start + 7]
+            self.lower_coordinates = [self.s_start - 2000, self.s_start + 7]
         elif self.strand == -1:
-            return [self.s_start - 2000, self.s_start]
+            self.lower_coordinates = [self.s_start - 2000, self.s_start]
         else:
-            return [-1, -1]
+            self.lower_coordinates = [-1, -1]
 
     def __get_wt_coordinates__(self):
-        return [self.s_start - 2000, self.s_start + 2000]
+        self.wildtype_coordinates = [self.s_start - 2000, self.s_start + 2000]
 
     def __set_bit_score_status__(self):
         if self.bit_score >= 80:
-            return True
-        return False
+            self.bit_score_status = True
 
     def __strand_direction__(self):
         # Determine if sequence is on the plus or minus strand
-        if int(self.s_start < self.s_end):
-            return 1
-        else:
-            return -1
+        if int(self.s_start < self.s_end):  # plus strand
+            self.side_gfp3utr = "normal"  # gfp3utr is a left primer, match with right
+            self.side_3dsgg = "revcomp"  # 3dsgg is a right primer, match with left
+            self.primer_name_left = self.query + "b"  # left primer matches iwth 3dsgg
+            self.primer_name_right = self.query + "a"  # right primer matches with gfp3utr
+            self.strand = 1
+        else:  # minus strand
+            self.side_gfp3utr = "revcomp"  # gfp3utr is a right primer, match with left
+            self.side_3dsgg = "normal"  # 3dsgg is a left primer, match with right
+            self.primer_name_left = self.query + "a"  # left primer matches with gfp3utr
+            self.primer_name_right = self.query + "b"  # right primer matches witj 3dsgg
+            self.strand = -1
 
     def __set_q_start_status__(self):
         # Deterime if sequence match has a q. start of 1
         if self.q_start == 1:
-            return True
-        else:
-            return False
+            self.q_start_status = True
 
     def __build_insertion_sequence__(self):
         if self.strand == 1:
@@ -182,33 +190,7 @@ class Query:
         else:
             self.insertion_sequence = "FAILED TO MAKE INSERTION SEQUENCE"
 
-    def __set_primer_side__(self):
-        if self.strand == 1:
-            self.side_gfp3utr = "right"
-            self.side_3dsgg = "left"
-        elif self.strand == -1:
-            self.side_gfp3utr = "left"
-            self.side_3dsgg = "right"
-
-    def __toJSON__(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-
-    def __iter__(self):
-        # first start by grabbing the Class items
-        iters = dict((x, y) for x, y in Query.__dict__.items() if x[:2] != '__')
-
-        # then update the class items with the instance items
-        iters.update(self.__dict__)
-
-        # now 'yield' through the items
-        for x, y in iters.items():
-            yield x, y
-
-    # def __print_Query__(self):
-    #    q = self.__iter__()
-    #    print(q)
-
-    def __make_filterfasta_input(self):
+    def __make_filterfasta_input__(self):
         return f"{self.query} {self.chromosome} " + \
                f"{self.wildtype_coordinates[0]} {self.wildtype_coordinates[1]} " + \
                f"{self.upper_coordinates[0]} {self.upper_coordinates[1]} " + \
@@ -262,65 +244,94 @@ class Query:
         self.best_query = jsonObject["best_query"]
 
     def __create_primer3_input__(self):
+        right_primer_input = f"SEQUENCE_ID={self.primer_name_right}\n" + \
+                             f"SEQUENCE_TEMPLATE={self.insertion_sequence}\n"
+        left_primer_input = f"SEQUENCE_ID={self.primer_name_left}\n" + \
+                            f"SEQUENCE_TEMPLATE={self.insertion_sequence}\n"
 
-        # primer_option, primer_sequence, product_size, hairpin, task = "", "", "", "", ""
+        if self.strand == 1:
+            # 3dsgg is right / revcomp      ->  matches with left, b
+            # gfp3utr is left / normal      ->  matches with right, a
+            right_primer_input += f"SEQUENCE_PRIMER={gfp3utr}\n"
+            left_primer_input += f"SEQUENCE_PRIMER_REVCOMP={dsgg3}\n"
+        elif self.strand == -1:
+            # 3dsgg is left / normal        ->  matches with right, b
+            # gfp3utr is right / revcomp    ->  matches with left, a
+            right_primer_input += f"SEQUENCE_PRIMER={dsgg3}\n"
+            left_primer_input += f"SEQUENCE_PRIMER_REVCOMP={gfp3utr}\n"
+        else:
+            right_primer_input += f"__error__\n"
+            left_primer_input += f"__error__\n"
 
-        input_str = f"SEQUENCE_ID={self.query}\n"
-        input_str += f"SEQUENCE_TEMPLATE={self.insertion_sequence}\n"
+        input_str = \
+            f"PRIMER_MASK_KMERLIST_PATH=genomes/kmer_lists/zea_mays\n" + \
+            f"PRIMER_TASK=generic\n" + \
+            f"PRIMER_PICK_LEFT_PRIMER=1\n" + \
+            f"PRIMER_PICK_INTERNAL_OLIGO=0\n" + \
+            f"PRIMER_PICK_RIGHT_PRIMER=1\n" + \
+            f"PRIMER_MASK_FAILURE_RATE=0.1\n"
 
-        # TODO: do this right!!!!!!
-        input_str += f"SEQUENCE_PRIMER={left_side}\nSEQUENCE_PRIMER_REVCOMP={right_side}\n"
+        if self.strand == 1:
+            right_primer_input += f"{input_str}PRIMER_PRODUCT_SIZE_RANGE=750-1000\n"  # pair wtih gfp3utr
+            left_primer_input += f"{input_str}PRIMER_PRODUCT_SIZE_RANGE=425-775\n"  # pair with dsgg3
+        elif self.strand == -1:
+            right_primer_input += f"{input_str}PRIMER_PRODUCT_SIZE_RANGE=425-775\n"  # pair with dsgg3
+            left_primer_input += f"{input_str}PRIMER_PRODUCT_SIZE_RANGE=750-1000\n"  # pair with gfp3utr
+        else:
+            right_primer_input += f"__error__\n"
+            left_primer_input += f"__error__\n"
 
-        # with open(outfile_name, "a+") as outfile:
-        # outfile.write("SEQUENCE_ID=" + query + "\n")
-        # outfile.write("SEQUENCE_TEMPLATE=" + sequence + "\n")
-        # verify will be boolean, T/F value
-        ##if verify:
-        #  left_side = side[0]["primer_seq"]
-        #  right_side = side[1]["primer_seq"]
-        #  outfile.write(f"SEQUENCE_PRIMER={left_side}\nSEQUENCE_PRIMER_REVCOMP={right_side}\n")
-        #  product_size = "300-1100"
-        #  task = "check_primers"
+        input_str = f"PRIMER_OPT_SIZE=22\n" + \
+                    f"PRIMER_MIN_SIZE=20\n" + \
+                    f"PRIMER_MAX_SIZE=24\n" + \
+                    f"PRIMER_OPT_TM=62.0\n" + \
+                    f"PRIMER_MIN_TM=59.0\n" + \
+                    f"PRIMER_MAX_TM=65.0\n" + \
+                    f"PRIMER_TM_FORMULA=1\n" + \
+                    f"PRIMER_PAIR_MAX_DIFF_TM=5.0\n"
 
-        if not verify:
-            task = "generic"
-            if side == "left":
-                primer_option = "SEQUENCE_PRIMER_REVCOMP="
-            if side == "right":
-                primer_option = "SEQUENCE_PRIMER="
-            if primer == "a":
-                primer_sequence = "TGCAAGCTCGAGTTTCTCCA"  # gfp3utr
-                product_size = "750-1000"
-                hairpin = "24"
-            if primer == "b":
-                primer_sequence = "TTGGAGCTGGCCATATTGCAG"  # dsgg3
-                product_size = "425-775"
-                hairpin = "38"
-            outfile.write(primer_option + primer_sequence + "\n")
+        # 24 for gfp3utr, 38 for 3dsgg
+        if self.strand == 1:
+            right_primer_input += f"{input_str}PRIMER_MAX_HAIRPIN_TH=24\n"  # pair wtih gfp3utr
+            left_primer_input += f"{input_str}PRIMER_MAX_HAIRPIN_TH=38\n"  # pair with 3dsgg
+        elif self.strand == -1:
+            right_primer_input += f"{input_str}PRIMER_MAX_HAIRPIN_TH=38\n"  # pair wtih 3dsgg
+            left_primer_input += f"{input_str}PRIMER_MAX_HAIRPIN_TH=24\n"  # pair with gfp3utr
+        else:
+            right_primer_input += f"__error__\n"
+            left_primer_input += f"__error__\n"
 
-        outfile.write(
-            f"PRIMER_MASK_KMERLIST_PATH=resources/part2/kmer_lists/zea_mays\n")
-        outfile.write(
-            f"PRIMER_TASK={task}\nPRIMER_PICK_LEFT_PRIMER=1\nPRIMER_PICK_INTER"
-            "NAL_OLIGO=0\nPRIMER_PICK_RIGHT_PRIMER=1\nPRIMER_MASK_FAILURE_RATE"
-            "=0.1\n")
-        outfile.write(f"PRIMER_PRODUCT_SIZE_RANGE={product_size}\n")
+        input_str = f"PRIMER_EXPLAIN_FLAG=1\n" + \
+                    f"PRIMER_MIN_GC=30.0\n" + \
+                    f"PRIMER_SECONDARY_STRUCTURE_ALIGNMENT=1\n" + \
+                    f"PRIMER_MAX_END_STABILITY=9.0\n" + \
+                    f"PRIMER_MIN_LEFT_THREE_PRIME_DISTANCE=3\n" + \
+                    f"PRIMER_MIN_RIGHT_THREE_PRIME_DISTANCE=3\n" + \
+                    f"PRIMER_LIBERAL_BASE=1\n" + \
+                    f"PRIMER_FIRST_BASE_INDEX=1\n" + \
+                    f"PRIMER_MAX_TEMPLATE_MISPRIMING=12.00\n" + \
+                    f"PRIMER_MAX_TEMPLATE_MISPRIMING_TH=47.00\n" + \
+                    f"PRIMER_PAIR_MAX_TEMPLATE_MISPRIMING=24.00\n" + \
+                    f"PRIMER_PAIR_MAX_TEMPLATE_MISPRIMING_TH=47.00\n" + \
+                    f"=\n"
 
-        outfile.write("PRIMER_OPT_SIZE=22\nPRIMER_MIN_SIZE=20\nPRIMER_MAX_SIZE"
-                      "=24\nPRIMER_OPT_TM=62.0\nPRIMER_MIN_TM=59.0\nPRIMER_MAX_TM=65.0\nPRIM"
-                      "ER_TM_FORMULA=1\nPRIMER_PAIR_MAX_DIFF_TM=5.0\n")
+        right_primer_input += input_str
+        left_primer_input += input_str
 
-        if hairpin:
-            outfile.write(f"PRIMER_MAX_HAIRPIN_TH={hairpin}\n")
+        # print(right_primer_input)
+        # print(left_primer_input)
+        return right_primer_input + left_primer_input
 
-        outfile.write("PRIMER_EXPLAIN_FLAG=1\nPRIMER_MIN_GC=30.0\nPRIMER_SECON"
-                      "DARY_STRUCTURE_ALIGNMENT=1\nPRIMER_MAX_END_STABILITY=9.0\nPRIMER_MIN_"
-                      "LEFT_THREE_PRIME_DISTANCE=3\nPRIMER_MIN_RIGHT_THREE_PRIME_DISTANCE=3"
-                      "\nPRIMER_LIBERAL_BASE=1\nPRIMER_FIRST_BASE_INDEX=1\nPRIMER_MAX_TEMPLA"
-                      "TE_MISPRIMING=12.00\nPRIMER_MAX_TEMPLATE_MISPRIMING_TH=47.00\nPRIMER_"
-                      "PAIR_MAX_TEMPLATE_MISPRIMING=24.00\nPRIMER_PAIR_MAX_TEMPLATE_MISPRIMI"
-                      "NG_TH=47.00\n")
+    def __toJSON__(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-        outfile.write("=\n")
+    def __iter__(self):
+        # first start by grabbing the Class items
+        iters = dict((x, y) for x, y in Query.__dict__.items() if x[:2] != '__')
 
-    return
+        # then update the class items with the instance items
+        iters.update(self.__dict__)
+
+        # now 'yield' through the items
+        for x, y in iters.items():
+            yield x, y
