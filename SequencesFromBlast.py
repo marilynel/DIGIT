@@ -105,8 +105,6 @@ def set_best_for_genome():
         for allele in all_queries[genome]:
             if allele not in list_of_queries:
                 list_of_queries.append(allele)
-            # if allele not in best_query_per_genome[genome]:
-            # if all_queries[genome][allele]
             get_best_query(genome, allele)
     write_to_best_queries_file(list_of_queries)
 
@@ -166,7 +164,7 @@ def pick_genome(allele, best_bit_score):
 
 
 def write_to_best_queries_file(list_of_queries):
-    with open("best_queries_by_genome.csv", "w+") as newfile:
+    with open("BestQueriesByGenome.csv", "w+") as newfile:
         newfile.write(
             "query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_sc" +
             "ore,B73_num_hits,B73_qstart_status,W22_bit_score,W22_num_hits,W2" +
@@ -254,39 +252,31 @@ def queries_to_json(filename):
     return
 
 
+def run_filterfasta():
+    for gen in all_queries:
+        for q in all_queries[gen]:
+            for i in range(0, len(all_queries[gen][q])):
+                if all_queries[gen][q][i].best_query:
+                    subprocess.run(
+                        [
+                            "SGE_Batch",
+                            "-c",
+                            f"./filterfasta.sh {all_queries[gen][q][i].query} {all_queries[gen][q][i].chromosome} {all_queries[gen][q][i].wildtype_coordinates[0]} {all_queries[gen][q][i].wildtype_coordinates[1]} {all_queries[gen][q][i].upper_coordinates[0]} {all_queries[gen][q][i].upper_coordinates[1]} {all_queries[gen][q][i].lower_coordinates[0]} {all_queries[gen][q][i].lower_coordinates[1]} {gen[:-2]}",
+                            "-q",
+                            "bpp",
+                            "-P",
+                            "8",
+                            "-r",
+                            f"sge.{all_queries[gen][q][i].query}"
+                        ]
+                    )
+
+
 if __name__ == '__main__':
-    find_blast_output_files(sys.argv[1])
+    find_blast_output_files("blast_output")
     list_of_queries = set_best_for_genome()
     set_best_query(list_of_queries)
     queries_to_json("AllBlastData.json")
 
-    # filterfasta Usage:
-    # filterfasta.pl --match '$chromosome' --start '$start' --end '$end' '$db'/Zm*
-    if sys.argv[2] == "true":
-        for gen in all_queries:
-            for q in all_queries[gen]:
-                for i in range(0, len(all_queries[gen][q])):
-                    if all_queries[gen][q][i].best_query == True:
-                        subprocess.run(
-                            [
-                                "SGE_Batch",
-                                "-c",
-                                f"./filterfasta.sh {all_queries[gen][q][i].__make_filterfasta_input__()}"  # this line has not yet been tested
-                                # f"./filterfasta.sh {all_queries[gen][q][i].query} {all_queries[gen][q][i].chromosome} {all_queries[gen][q][i].wildtype_coordinates[0]} {all_queries[gen][q][i].wildtype_coordinates[1]} {all_queries[gen][q][i].upper_coordinates[0]} {all_queries[gen][q][i].upper_coordinates[1]} {all_queries[gen][q][i].lower_coordinates[0]} {all_queries[gen][q][i].lower_coordinates[1]} {gen[:-2]}",
-                                # "filterfasta.sh",
-                                # all_queries[gen][q][i].query,
-                                # all_queries[gen][q][i].chromosome,
-                                # str(all_queries[gen][q][i].wildtype_coordinates[1]),
-                                # str(all_queries[gen][q][i].upper_coordinates[0]),
-                                # str(all_queries[gen][q][i].upper_coordinates[1]),
-                                # str(all_queries[gen][q][i].lower_coordinates[0]),
-                                # str(all_queries[gen][q][i].lower_coordinates[1]),
-                                # gen[:-2],
-                                "-q",
-                                "bpp",
-                                "-P",
-                                "8",
-                                "-r",
-                                f"sge.{all_queries[gen][q][i].query}"
-                            ]
-                        )
+    if sys.argv[1] == "true":
+        run_filterfasta()

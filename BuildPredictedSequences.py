@@ -1,11 +1,14 @@
 import subprocess
 from Query import Query
+from Sequences import Sequences
+from Primer3Object import Primer3Object
 import os
 import sys
 import json
 import glob
 
 queries_working_set = {}
+
 
 def find_filterfasta_output_files(dirname):
     fasta_dict = {}
@@ -49,30 +52,39 @@ def store_and_construct_sequences(filename, allele):
     with open(filename, "r") as fastafile:
         for line in fastafile:
             if line[0] == ">":
-                position = line.split("_")[-1]      # upper, lower, or wildtype
+                position = line.split("_")[-1]  # upper, lower, or wildtype
             else:
                 fasta_dict[position.strip()] = line.strip()
+        # TODO: may change the below to be handled in Query method
         queries_working_set[allele].upper_sequence = fasta_dict["upper"]
         queries_working_set[allele].lower_sequence = fasta_dict["lower"]
         queries_working_set[allele].wildtype_sequence = fasta_dict["wildtype"]
         queries_working_set[allele].__build_insertion_sequence__()
 
 
+def queries_to_json(filename):
+    '''
+    Converts dictionary to JSON object and writes it to a file.
+    '''
+    json_object = {}
+    for q in queries_working_set:
+        if queries_working_set[q].query not in json_object:
+            json_object[queries_working_set[q].query] = []
+        json_object[queries_working_set[q].query] = dict(queries_working_set[q])
+    new_json_object = json.dumps(json_object, indent=4)
+
+    with open(filename, "w") as outfile:
+        outfile.write(new_json_object)
+
+    return
 
 
-def main():
-    create_query_struct("AllBlastData06.json")
-    find_filterfasta_output_files("filterfasta_files")
-    with open("primer3_input.txt", "w") as p3file:
-        for allele in queries_working_set:
-            p3file.write(queries_working_set[allele].__create_primer3_input__())
-
-    #SGE_Batch -c 'primer3_core '$prein'plus_A'$rightsuff' > '$preout'plus_A'$rightsuff'' -q bpp -P 8 -r sge.run_primer3_$now
+def run_primer3():
     subprocess.run(
         [
             "SGE_Batch",
             "-c",
-            "primer3_core primer3_input.txt > primer3_output.txt",
+            "primer3_core Primer3Input08.txt > Primer3Output.txt",
             "-q",
             "bpp",
             "-P",
@@ -83,9 +95,21 @@ def main():
     )
 
 
-    # TODO:
-    # pass this file to primer3 and direct results somehwere
+def main():
+    create_query_struct("AllBlastData08.json")
+    find_filterfasta_output_files("filterfasta_files")
+    with open("Primer3Input.txt", "w") as p3file:
+        for allele in queries_working_set:
+            leftP3 = Primer3Object("generic", "left", queries_working_set[allele])
+            # p3file.write(queries_working_set[allele].__create_primer3_input__())
+            rightP3 = Primer3Object("generic", "right", queries_working_set[allele])
+            inputStr = leftP3.input_str + rightP3.input_str
+            p3file.write(inputStr)
 
+    queries_to_json("WorkingQueries.json")
+
+    if sys.argv[1] == "true":
+        run_primer3()
 
 
 if __name__ == "__main__":
