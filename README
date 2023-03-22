@@ -1,0 +1,15 @@
+*************
+*   DIGIT   *
+*************
+
+Digital Insertion Tool (????)
+
+System requirements:
+
+Python3
+Perl
+
+
+
+TODO: create venv with necessary modules? --> may not be worth the effort if run on CQLS
+

@@ -56,6 +56,7 @@ if($match ne '') {
       $_ =~ s/\|/\_\_\_\_\_/g;
       push @match, $_;
     }
+    # my @match = map { chomp($_) =~ s/\|/\_\_\_\_\_/g } <MATCH>;
     close(MATCH);
   } else {
     $match =~ s/\|/\_\_\_\_\_/g;
