@@ -11,5 +11,32 @@ Perl
 
 
 
+
+what the fuck does this shit do???
+
+1.  parses blast output
+
+    a.  blast output is for a specific set of alleles from Dooner and Du where they say the Ds
+        jumping gene likes to pop up
+    b.  needs to have output corresponding specifically with those three genomes
+            TODO: can I make it so genome dbs are not hardcoded in? rather its taken from what is
+            available in the program?
+
+2.  calculates the necessary coordinates needed for insertion prediction
+
+    a.  what is sequence -2000 from insertion site? +2000 from insertion site?
+    b.  note the overhang
+    c.  -2000 to +2000 for wildtype -- used in validation
+
+3.  compares insertions and picks the best one using bit score and relative knowledge of genome
+
+4.  submits filterfasta requests to SGE
+
+
+
+
+
+
 TODO: create venv with necessary modules? --> may not be worth the effort if run on CQLS
 
+TODO: add blast to program?
