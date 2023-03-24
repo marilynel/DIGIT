@@ -15,67 +15,67 @@ class Primer3Object:
 
         # self.__initializePrimerName__(q)
         self.__initializeVars__(q)
-        self.input_str = ""
+        self.inputStr = ""
 
         self.__buildInputStr__(q)
 
     def __buildInputStr__(self, q):
         if self.side == "left":
-            self.input_str = (f"SEQUENCE_ID={q.primer_name_left}\n")
+            self.inputStr = (f"SEQUENCE_ID={q.primerNameLeft}\n")
         elif self.side == "right":
-            self.input_str = (f"SEQUENCE_ID={q.primer_name_right}\n")
+            self.inputStr = (f"SEQUENCE_ID={q.primerNameRight}\n")
         else:
             print("Error in primer3 input init: side error")
 
         if self.task == "check_primers":
-            self.input_str += (
-                    f"SEQUENCE_TEMPLATE={q.wildtype_sequence}\n" + \
-                    f"SEQUENCE_PRIMER={q.primer_sequence_left}" + \
-                    f"SEQUENCE_PRIMER_REVCOMP={q.primer_sequence_right}\n"
+            self.inputStr += (
+                    f"SEQUENCE_TEMPLATE={q.wildtypeSequence}\n" + \
+                    f"SEQUENCE_PRIMER={q.primerSequenceLeft}" + \
+                    f"SEQUENCE_PRIMER_REVCOMP={q.primerSequenceRight}\n"
                 # self.productSizeStr = "300-1100"
             )
 
         elif self.task == "generic":
-            self.input_str += (
-                f"SEQUENCE_TEMPLATE={q.insertion_sequence}\n"
+            self.inputStr += (
+                f"SEQUENCE_TEMPLATE={q.insertionSequence}\n"
             )
 
             if self.side == "left":
-                self.input_str += (
+                self.inputStr += (
                     f"SEQUENCE_PRIMER_REVCOMP="
                 )
             elif self.side == "right":
-                self.input_str += (
+                self.inputStr += (
                     f"SEQUENCE_PRIMER="
                 )
             else:
-                self.input_str += "__error__"
+                self.inputStr += "__error__"
                 print(
                     f"Error in composing Primer3 initial input: side error at {q.query}"
                 )
 
             '''if (q.strand == 1 and side == "left") or (q.strand == -1 and side == "right"):
-                self.input_str += f"{s.dsgg3}\n"
+                self.inputStr += f"{s.dsgg3}\n"
                 productSizeStr = s.dsgg3Size
                 bobby = s.dsgg3Hairpin
             elif (q.strand == -1 and side == "left") or (q.strand == 1 and side == "right"):
-                self.input_str += f"{s.gfp3utr}\n"
+                self.inputStr += f"{s.gfp3utr}\n"
                 productSizeStr = s.gfp3utrSize
                 bobby = s.gfp3utrHairpin
             else:
-                self.input_str += "__error__"
+                self.inputStr += "__error__"
                 print(
                     f"Error in composing Primer3 initial input: side or strand error at {q.query}"
                 )'''
-            self.input_str += self.startingPrimer
+            self.inputStr += self.startingPrimer
 
         else:
-            self.input_str += "__error__"
+            self.inputStr += "__error__"
             print(
                 f"Error in composing Primer3 inital input: task error at {q.query}"
             )
 
-        self.input_str += (
+        self.inputStr += (
                 f"\nPRIMER_MASK_KMERLIST_PATH=genomes/kmer_lists/zea_mays\n" + \
                 f"PRIMER_TASK={self.task}\n" + \
                 f"PRIMER_PICK_LEFT_PRIMER=1\n" + \
@@ -94,11 +94,11 @@ class Primer3Object:
         )
 
         if self.task == "generic":
-            self.input_str += (
+            self.inputStr += (
                 f"PRIMER_MAX_HAIRPIN_TH={self.bobby}\n"
             )
 
-        self.input_str += (
+        self.inputStr += (
                 f"PRIMER_EXPLAIN_FLAG=1\n" + \
                 f"PRIMER_MIN_GC=30.0\n" + \
                 f"PRIMER_SECONDARY_STRUCTURE_ALIGNMENT=1\n" + \
@@ -134,3 +134,5 @@ class Primer3Object:
             self.primerName = q.primer_name_left
         if self.side == "right":
             self.primerName = q.primer_name_right
+
+    # def __parsePrimer3Output__(self):

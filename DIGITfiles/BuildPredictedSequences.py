@@ -37,10 +37,10 @@ def findFilterfastaOutputFiles(dirname):
     # TODO: I think the error is occuring here
     #fasta_dict = {}
     for subdir, dirs, files in os.walk(dirname):
-        for one_file in files:
-            filename = os.path.join(subdir, one_file)
+        for oneFile in files:
+            filename = os.path.join(subdir, oneFile)
             if filename.find(".fasta") != -1:
-                rfile = filename.split("/")[1]
+                rfile = filename.split("/")[2]
                 allele = rfile.split(".")[0]
                 # a little worried this won't work, but there may be more fasta files than are actually needed
                 if allele in queriesWorkingSet:
@@ -79,22 +79,15 @@ def storeAndConstructSequences(filename, allele):
         "lower": "",
         "wildtype": ""
     }
-    print(fastaDict)
     with open(filename, "r") as fastafile:
         for line in fastafile:
             if line[0] == ">":
                 position = line.split("_")[-1]  # upper, lower, or wildtype
+
             else:
                 fastaDict[position.strip()] = line.strip()
-        # TODO: may change the below to be handled in Query method\
-        # TODO: above is done, just needs to be tested
-        #print(allele)
         queriesWorkingSet[allele].__assignSeqsToQuery__(fastaDict["upper"], fastaDict["lower"], fastaDict["wildtype"])
-        #queriesWorkingSet[allele].upperSequence = fastaDict["upper"]
-        #queriesWorkingSet[allele].lowerSequence = fastaDict["lower"]
-        #queriesWorkingSet[allele].wildtypeSequence = fastaDict["wildtype"]
-        #queriesWorkingSet[allele].wildtypeSequence = fastaDict["wildtype"]
-        #queriesWorkingSet[allele].__buildInsertionSequence__()
+
 
 
 def queriesToJSON(filename):
@@ -114,12 +107,12 @@ def queriesToJSON(filename):
     return
 
 
-def runPrimer3(inputFile):
+def runPrimer3(inputFile, flankSeq):
     subprocess.run(
         [
             "SGE_Batch",
             "-c",
-            "primer3_core " + inputFile + " > DIGITfiles/Primer3Output.txt",
+            "primer3_core " + inputFile + " > DIGITfiles/Primer3Output" + flankSeq + ".txt",
             "-q",
             "bpp",
             "-P",
@@ -134,16 +127,17 @@ def createPrimer3Input(flankseq):
         for allele in queriesWorkingSet:
             leftP3 = Primer3Object("generic", "left", queriesWorkingSet[allele])
             rightP3 = Primer3Object("generic", "right", queriesWorkingSet[allele])
-            inputStr = leftP3.input_str + rightP3.input_str
+            inputStr = leftP3.inputStr + rightP3.inputStr
             p3file.write(inputStr)
 
 
 def main():
+    flankSeq = sys.argv[1][12:]
     createQueryStruct("DIGITfiles/" + sys.argv[1])
-    findFilterfastaOutputFiles("DIGITfiles/filterfasta_files")
-    createPrimer3Input(sys.argv[1][12:])
-    queriesToJSON("DIGITfiles/WorkingQueries.json")
-    runPrimer3("DIGITfiles/Primer3Input" + sys.argv[1][12:] + ".txt")
+    findFilterfastaOutputFiles("DIGITfiles/FilterfastaFiles")
+    createPrimer3Input(flankSeq)
+    queriesToJSON("DIGITfiles/WorkingQueries" + flankSeq + ".json")
+    runPrimer3("DIGITfiles/Primer3Input" + flankSeq + ".txt", flankSeq)
 
 
 if __name__ == "__main__":

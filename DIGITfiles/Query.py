@@ -1,5 +1,5 @@
 import json
-from DIGITfiles.Sequences import Sequences
+from Sequences import Sequences
 
 
 class Query:
@@ -173,7 +173,7 @@ class Query:
         self.lowerSequence = jsonObject["lowerSequence"]
         self.insertionSequence = jsonObject["insertionSequence"]
         self.wildtypeSequence = jsonObject["wildtypeSequence"]
-        self.primerSequenceLeft = jsonObject["primerSequenceSeft"]
+        self.primerSequenceLeft = jsonObject["primerSequenceLeft"]
         self.primerSequenceRight = jsonObject["primerSequenceRight"]
         self.primerPositionLeft = int(jsonObject["primerPositionLeft"])
         self.primerPositionRight = int(jsonObject["primerPositionRight"])

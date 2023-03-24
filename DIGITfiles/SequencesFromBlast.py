@@ -1,5 +1,5 @@
 import subprocess
-from DIGITfiles.Query import Query
+from Query import Query
 import os
 import sys
 import json
@@ -28,8 +28,8 @@ allQueries = {
 
 def findBlastOutputFiles(dirname):
     '''
-    This function goes to the specified directory, locates relevant (.tab) 
-    files, and sends the file names to function process_blast_output() for 
+    This function goes to the specified directory, locates relevant (.tab)
+    files, and sends the file names to function process_blast_output() for
     parsing.
     '''
     for subdir, dirs, files in os.walk(dirname):
@@ -198,7 +198,7 @@ def getBestQuery(genome, query):
             secondBestQuery = bestQuery
             bestQuery = allQueries[genome][query][i]
         elif allQueries[genome][query][i].bitScore < bestQuery.bitScore:
-            if not secondBestQuery or allQueries[genome][query][i].bitScore > secondBestQuery.bit_score:
+            if not secondBestQuery or allQueries[genome][query][i].bitScore > secondBestQuery.bitScore:
                 secondBestQuery = allQueries[genome][query][i]
     # TODO: come back and make this work
     # if second_best_query:
@@ -253,36 +253,41 @@ def queriesToJSON(filename):
     return
 
 
-def runFilterfasta():
+def runFilterfasta(filelist):
     for gen in allQueries:
         for q in allQueries[gen]:
             for i in range(0, len(allQueries[gen][q])):
-                if allQueries[gen][q][i].bestHitForAllele:
-                    subprocess.run(
-                        [
-                            "SGE_Batch",
-                            "-c",
-                            f"./DIGITfiles/filterfasta.sh {allQueries[gen][q][i].query} {allQueries[gen][q][i].chromosome} {allQueries[gen][q][i].wildtypeCoordinates[0]} {allQueries[gen][q][i].wildtypeCoordinates[1]} {allQueries[gen][q][i].upperCoordinates[0]} {allQueries[gen][q][i].upperCoordinates[1]} {allQueries[gen][q][i].lowerCoordinates[0]} {allQueries[gen][q][i].lowerCoordinates[1]} {gen[:-2]}",
-                            "-q",
-                            "bpp",
-                            "-P",
-                            "8",
-                            "-r",
-                            f"sge.{allQueries[gen][q][i].query}"
-                        ]
-                    )
+                if allQueries[gen][q][i].query in filelist:
+                    print(f"{allQueries[gen][q][i].query} already exists in filterfasta folder")
+                else:
+                    if allQueries[gen][q][i].bestHitForAllele:
+                        subprocess.run(
+                            [
+                                "SGE_Batch",
+                                "-c",
+                                f"./DIGITfiles/filterfasta.sh {allQueries[gen][q][i].query} {allQueries[gen][q][i].chromosome} {allQueries[gen][q][i].wildtypeCoordinates[0]} {allQueries[gen][q][i].wildtypeCoordinates[1]} {allQueries[gen][q][i].upperCoordinates[0]} {allQueries[gen][q][i].upperCoordinates[1]} {allQueries[gen][q][i].lowerCoordinates[0]} {allQueries[gen][q][i].lowerCoordinates[1]} {gen[:-2]}",
+                                "-q",
+                                "bpp",
+                                "-P",
+                                "8",
+                                "-r",
+                                f"sge.{allQueries[gen][q][i].query}"
+                            ]
+                        )
 
-# todo: this is different from cqls version!!!
-if __name__ == '__main__':
+def main():
     findBlastOutputFiles(f"DIGITfiles/BlastOutput/{sys.argv[1]}")
     list_of_queries = setBestForGenome()
     setBestQuery(list_of_queries)
     queriesToJSON(f"DIGITfiles/AllBlastData_{sys.argv[1]}.json")
 
 
-    filelist = os.listdir("DIGITfiles/filterfasta_files")
+    filelist = os.listdir("DIGITfiles/FilterfastaFiles")
     #print(filelist)
-    run_filterfasta(filelist)
+
+    filelist = [filelist[i][:-6] for i in range(len(filelist))]
+    #print(filelist)
+    runFilterfasta(filelist)
 
 
 if __name__ == '__main__':
