@@ -2,13 +2,16 @@ import os
 import subprocess
 
 
+# from DIGITfiles.Query import Query
+# from DIGITfiles.Sequences import Sequences
 
 def runSequencesFromBlast():
     listDirs = os.listdir("DIGITfiles/BlastOutput")
     for i in range(0, len(listDirs)):
         print(f"({i + 1}) {listDirs[i]}")
 
-    print("Select a directory to work with. Make sure the folder you need is in the DIGITfiles/BlastOutput/ folder.")
+    print(
+        "Select a directory to work with. Make sure the folder you need is in the DIGITfiles/BlastOutput/ folder.")
     sel = input()
 
     try:
@@ -20,6 +23,7 @@ def runSequencesFromBlast():
                 listDirs[int(sel) - 1]
             ]
         )
+
         print(
             "Return later to continue to continue the primer making process with building the predicted insertion sequences. SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running time may vary wildly.")
 

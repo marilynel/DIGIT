@@ -1,5 +1,6 @@
 import subprocess
 from Query import Query
+from FilterFasta import filterFasta
 import os
 import sys
 import json
@@ -24,6 +25,8 @@ allQueries = {
     "B73v5": {},
     "W22v2": {}
 }
+
+queriesWorkingSet = {}
 
 
 def findBlastOutputFiles(dirname):
@@ -198,7 +201,8 @@ def getBestQuery(genome, query):
             secondBestQuery = bestQuery
             bestQuery = allQueries[genome][query][i]
         elif allQueries[genome][query][i].bitScore < bestQuery.bitScore:
-            if not secondBestQuery or allQueries[genome][query][i].bitScore > secondBestQuery.bitScore:
+            if not secondBestQuery or allQueries[genome][query][
+                i].bitScore > secondBestQuery.bitScore:
                 secondBestQuery = allQueries[genome][query][i]
     # TODO: come back and make this work
     # if second_best_query:
@@ -253,12 +257,33 @@ def queriesToJSON(filename):
     return
 
 
+def workingQueriesToJSON(filename):
+    '''
+    Converts dictionary to JSON object and writes it to a file.
+    '''
+    jsonObject = {}
+    for q in queriesWorkingSet:
+        if queriesWorkingSet[q].query not in jsonObject:
+            jsonObject[queriesWorkingSet[q].query] = []
+        jsonObject[queriesWorkingSet[q].query] = dict(queriesWorkingSet[q])
+    newJSONobject = json.dumps(jsonObject, indent=4)
+
+    with open(filename, "w") as outfile:
+        outfile.write(newJSONobject)
+
+    return
+
+
 def runFilterfasta(filelist):
     for gen in allQueries:
         for q in allQueries[gen]:
             for i in range(0, len(allQueries[gen][q])):
-                if allQueries[gen][q][i].query in filelist:
-                    print(f"{allQueries[gen][q][i].query} already exists in filterfasta folder")
+                if allQueries[gen][q][i].bestHitForAllele:
+                    queriesWorkingSet[allQueries[gen][q][i].query] = allQueries[gen][q][i]
+
+                # if allQueries[gen][q][i].query in filelist:
+                #    print(f"{allQueries[gen][q][i].query} already exists in filterfasta folder")
+                '''
                 else:
                     if allQueries[gen][q][i].bestHitForAllele:
                         subprocess.run(
@@ -274,6 +299,44 @@ def runFilterfasta(filelist):
                                 f"sge.{allQueries[gen][q][i].query}"
                             ]
                         )
+                '''
+    # coordinates = {
+    #    "test1" : ["chr1", [500, 600]],
+    #    "test2" : ["chr1", [550, 650]]
+    # }
+    coorA, coorB, coorW = {}, {}, {}
+
+    for q in queriesWorkingSet:
+        # print(queriesWorkingSet[q].genome)
+        if queriesWorkingSet[q].genome.strip() == "A188v1":
+            coorA[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].wildtypeCoordinates]
+            coorA[queriesWorkingSet[q].query + "_up"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].upperCoordinates]
+            coorA[queriesWorkingSet[q].query + "_lo"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].lowerCoordinates]
+        elif queriesWorkingSet[q].genome.strip() == "B73v5":
+            coorB[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].wildtypeCoordinates]
+            coorB[queriesWorkingSet[q].query + "_up"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].upperCoordinates]
+            coorB[queriesWorkingSet[q].query + "_lo"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].lowerCoordinates]
+        elif queriesWorkingSet[q].genome.strip() == "W22v2":
+            coorW[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].wildtypeCoordinates]
+            coorW[queriesWorkingSet[q].query + "_up"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].upperCoordinates]
+            coorW[queriesWorkingSet[q].query + "_lo"] = [queriesWorkingSet[q].chromosome,
+                                                         queriesWorkingSet[q].lowerCoordinates]
+        else:
+            print(f"I don't even know what went wrong with {queriesWorkingSet[q].query}")
+
+    seqDataA = filterFasta("DIGITfiles/Genomes/Zm-A188-REFERENCE-KSU-1.0.fa", coorA)
+    seqDataB = filterFasta("DIGITfiles/Genomes/Zm-B73-REFERENCE-NAM-5.0.fa", coorB)
+    seqDataW = filterFasta("DIGITfiles/Genomes/Zm-W22-REFERENCE-NRGENE-2.0.fa", coorW)
+    print(seqDataA)
+
 
 def main():
     findBlastOutputFiles(f"DIGITfiles/BlastOutput/{sys.argv[1]}")
@@ -281,13 +344,13 @@ def main():
     setBestQuery(list_of_queries)
     queriesToJSON(f"DIGITfiles/AllBlastData_{sys.argv[1]}.json")
 
-
     filelist = os.listdir("DIGITfiles/FilterfastaFiles")
-    #print(filelist)
 
     filelist = [filelist[i][:-6] for i in range(len(filelist))]
-    #print(filelist)
+
     runFilterfasta(filelist)
+
+    workingQueriesToJSON(f"DIGITfiles/WorkingQuerySet_{sys.argv[1]}.json")
 
 
 if __name__ == '__main__':
