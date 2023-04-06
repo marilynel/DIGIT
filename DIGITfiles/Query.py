@@ -134,14 +134,6 @@ class Query:
         else:
             self.insertionSequence = "FAILED TO MAKE INSERTION SEQUENCE"
 
-    '''
-    def __makeFilterfastaInput__(self):
-        return f"{self.query} {self.chromosome} " + \
-               f"{self.wildtypeCoordinates[0]} {self.wildtypeCoordinates[1]} " + \
-               f"{self.upperCoordinates[0]} {self.upperCoordinates[1]} " + \
-               f"{self.lowerCoordinates[0]} {self.lowerCoordinates[1]} " + \
-               f"{self.genome[:-2]}"
-    '''
 
     def __QueryFromJSON__(self, jsonObject):
         '''
@@ -198,90 +190,7 @@ class Query:
         self.__buildInsertionSequence__()
 
 
-    '''
-    # TODO: do I want to make a "primer3 input" object? would help clean up this code
-    # TODO: above is done, jsut need to incorpoate it? or maybe it already is? who tf knows
-    def __createPrimer3Input__(self):
-        seqObj = Sequences()
-        rightPrimerInput = f"SEQUENCE_ID={self.primerNameRight}\n" + \
-                             f"SEQUENCE_TEMPLATE={self.insertionSequence}\n"
-        leftPrimerInput = f"SEQUENCE_ID={self.primerNameLeft}\n" + \
-                            f"SEQUENCE_TEMPLATE={self.insertionSequence}\n"
 
-        if self.strand == 1:
-            # 3dsgg is on right / revcomp       ->  matches with left, b
-            # gfp3utr is on left / normal       ->  matches with right, a
-            rightPrimerInput += f"SEQUENCE_PRIMER={seqObj.gfp3utr}\n"
-            leftPrimerInput += f"SEQUENCE_PRIMER_REVCOMP={seqObj.dsgg3}\n"
-        elif self.strand == -1:
-            # 3dsgg is left / normal        ->  matches with right, b
-            # gfp3utr is right / revcomp    ->  matches with left, a
-            rightPrimerInput += f"SEQUENCE_PRIMER={seqObj.dsgg3}\n"
-            leftPrimerInput += f"SEQUENCE_PRIMER_REVCOMP={seqObj.gfp3utr}\n"
-        else:
-            print("Error in Query method __create_primer3_input__()")
-            rightPrimerInput += f"__error__\n"
-            leftPrimerInput += f"__error__\n"
-
-        inputStr = \
-            f"PRIMER_MASK_KMERLIST_PATH=genomes/kmer_lists/zea_mays\n" + \
-            f"PRIMER_TASK=generic\n" + \
-            f"PRIMER_PICK_LEFT_PRIMER=1\n" + \
-            f"PRIMER_PICK_INTERNAL_OLIGO=0\n" + \
-            f"PRIMER_PICK_RIGHT_PRIMER=1\n" + \
-            f"PRIMER_MASK_FAILURE_RATE=0.1\n"
-
-        if self.strand == 1:
-            rightPrimerInput += f"{inputStr}PRIMER_PRODUCT_SIZE_RANGE=750-1000\n"  # pair wtih gfp3utr
-            leftPrimerInput += f"{inputStr}PRIMER_PRODUCT_SIZE_RANGE=425-775\n"  # pair with dsgg3
-        elif self.strand == -1:
-            rightPrimerInput += f"{inputStr}PRIMER_PRODUCT_SIZE_RANGE=425-775\n"  # pair with dsgg3
-            leftPrimerInput += f"{inputStr}PRIMER_PRODUCT_SIZE_RANGE=750-1000\n"  # pair with gfp3utr
-        else:
-            print("Error in Query method __create_primer3_input__()")
-            rightPrimerInput += f"__error__\n"
-            leftPrimerInput += f"__error__\n"
-
-        inputStr = f"PRIMER_OPT_SIZE=22\n" + \
-                    f"PRIMER_MIN_SIZE=20\n" + \
-                    f"PRIMER_MAX_SIZE=24\n" + \
-                    f"PRIMER_OPT_TM=62.0\n" + \
-                    f"PRIMER_MIN_TM=59.0\n" + \
-                    f"PRIMER_MAX_TM=65.0\n" + \
-                    f"PRIMER_TM_FORMULA=1\n" + \
-                    f"PRIMER_PAIR_MAX_DIFF_TM=5.0\n"
-
-        # 24 for gfp3utr, 38 for 3dsgg
-        if self.strand == 1:
-            rightPrimerInput += f"{inputStr}PRIMER_MAX_HAIRPIN_TH=24\n"  # pair wtih gfp3utr
-            leftPrimerInput += f"{inputStr}PRIMER_MAX_HAIRPIN_TH=38\n"  # pair with 3dsgg
-        elif self.strand == -1:
-            rightPrimerInput += f"{inputStr}PRIMER_MAX_HAIRPIN_TH=38\n"  # pair wtih 3dsgg
-            leftPrimerInput += f"{inputStr}PRIMER_MAX_HAIRPIN_TH=24\n"  # pair with gfp3utr
-        else:
-            print("Error in Query method __create_primer3_input__()")
-            rightPrimerInput += f"__error__\n"
-            leftPrimerInput += f"__error__\n"
-
-        inputStr = f"PRIMER_EXPLAIN_FLAG=1\n" + \
-                    f"PRIMER_MIN_GC=30.0\n" + \
-                    f"PRIMER_SECONDARY_STRUCTURE_ALIGNMENT=1\n" + \
-                    f"PRIMER_MAX_END_STABILITY=9.0\n" + \
-                    f"PRIMER_MIN_LEFT_THREE_PRIME_DISTANCE=3\n" + \
-                    f"PRIMER_MIN_RIGHT_THREE_PRIME_DISTANCE=3\n" + \
-                    f"PRIMER_LIBERAL_BASE=1\n" + \
-                    f"PRIMER_FIRST_BASE_INDEX=1\n" + \
-                    f"PRIMER_MAX_TEMPLATE_MISPRIMING=12.00\n" + \
-                    f"PRIMER_MAX_TEMPLATE_MISPRIMING_TH=47.00\n" + \
-                    f"PRIMER_PAIR_MAX_TEMPLATE_MISPRIMING=24.00\n" + \
-                    f"PRIMER_PAIR_MAX_TEMPLATE_MISPRIMING_TH=47.00\n" + \
-                    f"=\n"
-
-        rightPrimerInput += inputStr
-        leftPrimerInput += inputStr
-
-        return rightPrimerInput + leftPrimerInput
-    '''
     # TODO: maybe as this as function
     # TODO: double check directions!!!
     # TODO: wtf is this am i even using it??/
@@ -292,7 +201,9 @@ class Query:
             self.primerSequenceRight = output_dict["PRIMER_RIGHT_0_SEQUENCE"]
             self.primerPositionRight = output_dict["PRIMER_RIGHT_0"].split(",")[0]
             self.productSizeRight = output_dict["PRIMER_PAIR_0_PRODUCT_SIZE"]
-        else:
+        #else:
+        #    print(f"{self.query} has no right primer")
+        if "SEQUENCE_PRIMER" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] == "0":
             print(f"{self.query} has no right primer")
         # left primer
         if "SEQUENCE_PRIMER_REVCOMP" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] != "0":
@@ -300,11 +211,10 @@ class Query:
             self.primerSequenceLeft = output_dict["PRIMER_LEFT_0_SEQUENCE"]
             self.primerPositionLeft = output_dict["PRIMER_LEFT_0"].split(",")[0]
             self.productSizeLeft = output_dict["PRIMER_PAIR_0_PRODUCT_SIZE"]
-        else:
+        #else:
+        #    print(f"{self.query} has no left primer")
+        if "SEQUENCE_PRIMER_REVCOMP" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] == "0":
             print(f"{self.query} has no left primer")
-
-
-
 
 
 

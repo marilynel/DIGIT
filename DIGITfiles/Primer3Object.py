@@ -5,6 +5,7 @@ from Query import Query
 class Primer3Object:
     def __init__(self, task, side, q):
         # side refers to the side of the primer we are looking to find
+        self.q = q
         self.s = Sequences()
         self.productSizeStr = ""
         self.bobby = ""
@@ -14,30 +15,30 @@ class Primer3Object:
         # self.primerName = ""
 
         # self.__initializePrimerName__(q)
-        self.__initializeVars__(q)
+        self.__initializeVars__()
         self.inputStr = ""
 
-        self.__buildInputStr__(q)
+        self.__buildInputStr__()
 
-    def __buildInputStr__(self, q):
+    def __buildInputStr__(self):  # , q):
         if self.side == "left":
-            self.inputStr = (f"SEQUENCE_ID={q.primerNameLeft}\n")
+            self.inputStr = (f"SEQUENCE_ID={self.q.primerNameLeft}\n")
         elif self.side == "right":
-            self.inputStr = (f"SEQUENCE_ID={q.primerNameRight}\n")
+            self.inputStr = (f"SEQUENCE_ID={self.q.primerNameRight}\n")
         else:
             print("Error in primer3 input init: side error")
 
         if self.task == "check_primers":
             self.inputStr += (
-                    f"SEQUENCE_TEMPLATE={q.wildtypeSequence}\n" + \
-                    f"SEQUENCE_PRIMER={q.primerSequenceLeft}" + \
-                    f"SEQUENCE_PRIMER_REVCOMP={q.primerSequenceRight}\n"
-                # self.productSizeStr = "300-1100"
+                    f"SEQUENCE_TEMPLATE={self.q.wildtypeSequence}\n" + \
+                    f"SEQUENCE_PRIMER={self.q.primerSequenceLeft}\n" + \
+                    f"SEQUENCE_PRIMER_REVCOMP={self.q.primerSequenceRight}"
             )
+            self.productSizeStr = "300-1100"
 
         elif self.task == "generic":
             self.inputStr += (
-                f"SEQUENCE_TEMPLATE={q.insertionSequence}\n"
+                f"SEQUENCE_TEMPLATE={self.q.insertionSequence}\n"
             )
 
             if self.side == "left":
@@ -51,28 +52,15 @@ class Primer3Object:
             else:
                 self.inputStr += "__error__"
                 print(
-                    f"Error in composing Primer3 initial input: side error at {q.query}"
+                    f"Error in composing Primer3 initial input: side error at {self.q.query}"
                 )
 
-            '''if (q.strand == 1 and side == "left") or (q.strand == -1 and side == "right"):
-                self.inputStr += f"{s.dsgg3}\n"
-                productSizeStr = s.dsgg3Size
-                bobby = s.dsgg3Hairpin
-            elif (q.strand == -1 and side == "left") or (q.strand == 1 and side == "right"):
-                self.inputStr += f"{s.gfp3utr}\n"
-                productSizeStr = s.gfp3utrSize
-                bobby = s.gfp3utrHairpin
-            else:
-                self.inputStr += "__error__"
-                print(
-                    f"Error in composing Primer3 initial input: side or strand error at {q.query}"
-                )'''
             self.inputStr += self.startingPrimer
 
         else:
             self.inputStr += "__error__"
             print(
-                f"Error in composing Primer3 inital input: task error at {q.query}"
+                f"Error in composing Primer3 inital input: task error at {self.q.query}"
             )
 
         self.inputStr += (
@@ -114,12 +102,14 @@ class Primer3Object:
                 f"=\n"
         )
 
-    def __initializeVars__(self, q):
-        if (q.strand == 1 and self.side == "left") or (q.strand == -1 and self.side == "right"):
+    def __initializeVars__(self):  # , q):
+        if (self.q.strand == 1 and self.side == "left") or (
+                self.q.strand == -1 and self.side == "right"):
             self.startingPrimer = self.s.dsgg3
             self.productSizeStr = self.s.dsgg3Size
             self.bobby = self.s.dsgg3Hairpin
-        elif (q.strand == -1 and self.side == "left") or (q.strand == 1 and self.side == "right"):
+        elif (self.q.strand == -1 and self.side == "left") or (
+                self.q.strand == 1 and self.side == "right"):
             self.startingPrimer = self.s.gfp3utr
             self.productSizeStr = self.s.gfp3utrSize
             self.bobby = self.s.gfp3utrHairpin
@@ -129,10 +119,8 @@ class Primer3Object:
         if self.task == "check_primers":
             self.productSizeStr = "300-1100"
 
-    def __initializePrimerName__(self, q):
+    def __initializePrimerName__(self):  # , q):
         if self.side == "left":
-            self.primerName = q.primer_name_left
+            self.primerName = self.q.primer_name_left
         if self.side == "right":
-            self.primerName = q.primer_name_right
-
-    # def __parsePrimer3Output__(self):
+            self.primerName = self.q.primer_name_right
