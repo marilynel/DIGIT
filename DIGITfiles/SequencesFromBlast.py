@@ -1,9 +1,13 @@
 import subprocess
 from Query import Query
 from FilterFasta import filterFasta
+from Sequences import Sequences
+from Primer3Object import Primer3Object
 import os
 import sys
 import json
+import glob
+import time
 
 # all queries is a dict with structure:
 #   {
@@ -29,6 +33,7 @@ allQueries = {
 queriesWorkingSet = {}
 
 
+### parse blast output ###
 def findBlastOutputFiles(dirname):
     '''
     This function goes to the specified directory, locates relevant (.tab)
@@ -45,6 +50,7 @@ def findBlastOutputFiles(dirname):
     return
 
 
+### parse blast output ###
 def processBlastOutput(filename):
     '''
     Parse blast output files line by line, gathering data that will be used to
@@ -57,23 +63,18 @@ def processBlastOutput(filename):
     with open(filename, "r+") as blastfile:
         for line in blastfile:
             if line[0] == '#':
-                # hash lines may hold data that will be necessary for Query
-                # object initialization. genome and num_hits will remain
-                # unchanged until after all of the hits for that query are read
                 genome = getGenome(line, genome)
                 num_hits = getNumHits(line, num_hits)
             else:
                 newQuery = Query(line, genome, num_hits)
                 newQuery.__setValues__()
                 if newQuery.query not in allQueries[genome]:
-                    # Add that query to all_queries[genome] as a key, value
-                    # being an empty list
                     allQueries[genome][newQuery.query] = []
-                # Place Query object in all_queries object
                 allQueries[genome][newQuery.query].append(newQuery)
     return
 
 
+### parse blast output ###
 def getGenome(line, genome):
     '''
     Parse a line for string indicating the genome name. If line does not have
@@ -85,6 +86,7 @@ def getGenome(line, genome):
     return genome
 
 
+### parse blast output ###
 def getNumHits(line, numHits):
     '''
     Parse a line for string indicating the number of hits for that query in a
@@ -97,7 +99,8 @@ def getNumHits(line, numHits):
     return numHits
 
 
-def setBestForGenome():
+### allele selection ###
+def setBestForGenome(flankseq):
     '''
     Create dictionary identifying the best BLAST hit for each query, within
     each genome.
@@ -109,11 +112,12 @@ def setBestForGenome():
             if allele not in listQueries:
                 listQueries.append(allele)
             getBestQuery(genome, allele)
-    writeToBestQueriesFile(listQueries)
+    writeToBestQueriesFile(listQueries, flankseq)
 
     return listQueries
 
 
+### allele selection ###
 def makeStrBestInGenome(genome, allele, best_bit_score):
     '''
     Find the specific hit that was specified as the best for that query ID and
@@ -128,6 +132,7 @@ def makeStrBestInGenome(genome, allele, best_bit_score):
     return "none,none,none,"
 
 
+### allele selection ###
 def bestGenomesWrite(bestBitScore):
     '''
     Find the best of the best hits, return strinigied list for writing to file.
@@ -142,6 +147,7 @@ def bestGenomesWrite(bestBitScore):
     return str(genomeList)
 
 
+### allele selection ###
 def workingQuerySelection(genome, allele):
     '''
     set ID for best_query --> indicates that this will belong to working set
@@ -152,6 +158,7 @@ def workingQuerySelection(genome, allele):
             return
 
 
+### allele selection ###
 def pickGenome(allele, bestBitScore):
     if bestBitScore["B73v5"] != 0:
         workingQuerySelection("B73v5", allele)
@@ -163,18 +170,23 @@ def pickGenome(allele, bestBitScore):
         workingQuerySelection("A188v1", allele)
     else:
         print("you really messed something up")
-        exit()
 
 
-def writeToBestQueriesFile(listQueries):
-    with open("BestQueriesByGenome.csv", "w+") as newfile:
+### store data ###
+def writeToBestQueriesFile(listQueries, flankseq):
+    with open("DIGIToutput/" + flankseq + "/BestQueriesByGenome_" + flankseq + ".csv",
+              "w+") as newfile:
         newfile.write(
             "query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_sc" +
             "ore,B73_num_hits,B73_qstart_status,W22_bit_score,W22_num_hits,W2" +
             "2_qstart_status,best_genomes\n"
         )
         for allele in listQueries:
-            bestBitScore = {}
+            bestBitScore = {
+                "A188v1": 0,
+                "B73v5": 0,
+                "W22v2": 0
+            }
             newfile.write(
                 allele + "," +
                 makeStrBestInGenome("A188v1", allele, bestBitScore) +
@@ -187,6 +199,7 @@ def writeToBestQueriesFile(listQueries):
     return
 
 
+### allele selection ###
 def getBestQuery(genome, query):
     '''
     Sort hits to identify best hit for a query. Find the percent difference
@@ -207,7 +220,8 @@ def getBestQuery(genome, query):
     # TODO: come back and make this work
     # if second_best_query:
     #    best_query.diff = abs(
-    #        ((best_query.bit_score - second_best_query.bit_score) / (best_query.bit_score + second_best_query.bit_score)) / 2) * 100
+    #        ((best_query.bit_score - second_best_query.bit_score) / (best_query.bit_score +
+    #        second_best_query.bit_score)) / 2) * 100
 
     for i in range(0, len(allQueries[genome][query])):
         if allQueries[genome][query][i] == bestQuery:
@@ -216,6 +230,7 @@ def getBestQuery(genome, query):
     return
 
 
+### allele selection ###
 def alleleInGenomeComp(genome, allele):
     if allele in allQueries[genome]:
         for i in range(0, len(allQueries[genome][allele])):
@@ -224,6 +239,7 @@ def alleleInGenomeComp(genome, allele):
     return -1
 
 
+### allele selection ###
 def setBestQuery(listQueries):
     for query in listQueries:
         # todo: the hell is this???????????
@@ -234,6 +250,7 @@ def setBestQuery(listQueries):
         ]
 
 
+### store data ###
 def queriesToJSON(filename):
     '''
     Converts dictionary to JSON object and writes it to a file.
@@ -257,6 +274,7 @@ def queriesToJSON(filename):
     return
 
 
+### store data ###
 def workingQueriesToJSON(filename):
     '''
     Converts dictionary to JSON object and writes it to a file.
@@ -274,40 +292,19 @@ def workingQueriesToJSON(filename):
     return
 
 
-def runFilterfasta(filelist):
+### allele selection ###
+def buildQueriesWorkingSet():
     for gen in allQueries:
         for q in allQueries[gen]:
             for i in range(0, len(allQueries[gen][q])):
                 if allQueries[gen][q][i].bestHitForAllele:
                     queriesWorkingSet[allQueries[gen][q][i].query] = allQueries[gen][q][i]
 
-                # if allQueries[gen][q][i].query in filelist:
-                #    print(f"{allQueries[gen][q][i].query} already exists in filterfasta folder")
-                '''
-                else:
-                    if allQueries[gen][q][i].bestHitForAllele:
-                        subprocess.run(
-                            [
-                                "SGE_Batch",
-                                "-c",
-                                f"./DIGITfiles/filterfasta.sh {allQueries[gen][q][i].query} {allQueries[gen][q][i].chromosome} {allQueries[gen][q][i].wildtypeCoordinates[0]} {allQueries[gen][q][i].wildtypeCoordinates[1]} {allQueries[gen][q][i].upperCoordinates[0]} {allQueries[gen][q][i].upperCoordinates[1]} {allQueries[gen][q][i].lowerCoordinates[0]} {allQueries[gen][q][i].lowerCoordinates[1]} {gen[:-2]}",
-                                "-q",
-                                "bpp",
-                                "-P",
-                                "8",
-                                "-r",
-                                f"sge.{allQueries[gen][q][i].query}"
-                            ]
-                        )
-                '''
-    # coordinates = {
-    #    "test1" : ["chr1", [500, 600]],
-    #    "test2" : ["chr1", [550, 650]]
-    # }
-    coorA, coorB, coorW = {}, {}, {}
 
+### finding sequences ###
+def buildCoordinateSetsForFilterFasta():
+    coorA, coorB, coorW = {}, {}, {}
     for q in queriesWorkingSet:
-        # print(queriesWorkingSet[q].genome)
         if queriesWorkingSet[q].genome.strip() == "A188v1":
             coorA[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
                                                          queriesWorkingSet[q].wildtypeCoordinates]
@@ -332,25 +329,86 @@ def runFilterfasta(filelist):
         else:
             print(f"I don't even know what went wrong with {queriesWorkingSet[q].query}")
 
+    return coorA, coorB, coorW
+
+
+### finding sequences ###
+def runFilterfasta():
+    coorA, coorB, coorW = buildCoordinateSetsForFilterFasta()
+
     seqDataA = filterFasta("DIGITfiles/Genomes/Zm-A188-REFERENCE-KSU-1.0.fa", coorA)
     seqDataB = filterFasta("DIGITfiles/Genomes/Zm-B73-REFERENCE-NAM-5.0.fa", coorB)
     seqDataW = filterFasta("DIGITfiles/Genomes/Zm-W22-REFERENCE-NRGENE-2.0.fa", coorW)
-    print(seqDataA)
+
+    parseFilterfastaData(seqDataA)
+    parseFilterfastaData(seqDataB)
+    parseFilterfastaData(seqDataW)
+
+
+### finding sequences ###
+def parseFilterfastaData(seqData):
+    for allele in seqData:
+        upper, lower, wildtype = "", "", ""
+        i = 0
+        if allele.find("wt") != -1:
+            queriesWorkingSet[allele[:-3]].wildtypeSequence = seqData[allele]
+            i = 1
+        if allele.find("up") != -1:
+            queriesWorkingSet[allele[:-3]].upperSequence = seqData[allele]
+            i = 1
+        if allele.find("lo") != -1:
+            queriesWorkingSet[allele[:-3]].lowerSequence = seqData[allele]
+            i = 1
+    for allele in queriesWorkingSet:
+        if queriesWorkingSet[allele].upperSequence and queriesWorkingSet[allele].lowerSequence:
+            queriesWorkingSet[allele].__buildInsertionSequence__()
+        else:
+            queriesWorkingSet[allele].insertionSequence = "__failed__"
+
+
+### finding primers ###
+def runPrimer3(inputFile, flankseq):
+    now = int(time.time())
+    with open("DIGIToutput/" + flankseq + "/Primer3Output_" + flankseq + ".txt", "w") as outfile:
+        subprocess.run(
+            [
+                "primer3_core",
+                inputFile
+            ],
+            stdout=outfile, text=True
+        )
+
+
+### finding primers ###
+def createPrimer3Input(flankseq):
+    with open("DIGIToutput/" + flankseq + "/Primer3Input_" + flankseq + ".txt", "w") as p3file:
+        for allele in queriesWorkingSet:
+            leftP3 = Primer3Object("generic", "left", queriesWorkingSet[allele])
+            rightP3 = Primer3Object("generic", "right", queriesWorkingSet[allele])
+            newInputStr = leftP3.inputStr + rightP3.inputStr
+            p3file.write(newInputStr)
+    return "DIGIToutput/" + flankseq + "/Primer3Input_" + flankseq + ".txt"
 
 
 def main():
-    findBlastOutputFiles(f"DIGITfiles/BlastOutput/{sys.argv[1]}")
-    list_of_queries = setBestForGenome()
+    flankseq = sys.argv[1]
+
+    isExist = os.path.exists(f"DIGITfiles/BlastOutput/{flankseq}")
+    if not isExist:
+        os.makedirs(f"DIGITfiles/BlastOutput/{flankseq}")
+
+    findBlastOutputFiles(f"DIGITfiles/BlastOutput/{flankseq}")
+    list_of_queries = setBestForGenome(flankseq)
     setBestQuery(list_of_queries)
-    queriesToJSON(f"DIGITfiles/AllBlastData_{sys.argv[1]}.json")
+    queriesToJSON(f"DIGIToutput/" + flankseq + "/AllBlastData_" + flankseq + ".json")
+    buildQueriesWorkingSet()
 
-    filelist = os.listdir("DIGITfiles/FilterfastaFiles")
+    runFilterfasta()
 
-    filelist = [filelist[i][:-6] for i in range(len(filelist))]
+    inputFile = createPrimer3Input(flankseq)
+    runPrimer3(inputFile, flankseq)
 
-    runFilterfasta(filelist)
-
-    workingQueriesToJSON(f"DIGITfiles/WorkingQuerySet_{sys.argv[1]}.json")
+    workingQueriesToJSON(f"DIGIToutput/{flankseq}/WorkingSet_{flankseq}.json")
 
 
 if __name__ == '__main__':
