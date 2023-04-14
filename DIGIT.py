@@ -16,100 +16,161 @@ def okGo(dirname, fileSubstrings):
                 break
         else:
             print(
-                "You do not have the correct files available to complete this task. Check to make sure you have completed the previous steps in order to proceed. See README for more details.")
+                f"\nYou do not have the correct files available in {dirname}/ to complete this task. Check to make su" +
+                f"re you have completed the previous steps in order to proceed. See README for more details.\n"
+            )
             exit()
     return ok
 
 
-def runSequencesFromBlast():
-    listDirs = os.listdir("DIGITfiles/BlastOutput")
-
+def dirSelect(dirname):
+    listDirs = os.listdir(dirname)
     print(
-        f"\nSelect a directory to work with. Make sure the folder you need is in the DIGITfiles/BlastOutput/ folder.\n")
+        f"\nSelect a directory to work with. Make sure the folder you need is in the {dirname} folder.\n")
 
     for i in range(0, len(listDirs)):
         print(f"({i + 1}) {listDirs[i]}")
 
     print()
     sel = input()
+    if int(sel) < 1 or int(sel) > len(listDirs) + 1:
+        print(f"\nPlease don't be weird, just select a real directory. Exiting.\n")
+        exit()
+
+    return listDirs[int(sel) - 1]
+
+
+def runBlast():
+    listDirs = os.listdir("PutFlankingSequenceFilesHere/")
+    # listDirs = os.listdir("DIGITfiles/NotInUse/emptyDir/")
+    if not listDirs:
+        print(
+            f"\nThere are no fasta files of flanking sequences available to Blast. Upload the flanking sequence file " +
+            f"to the subdirectory PutFlankingSequenceFilesHere/ then restart this program.\n"
+        )
+        print(
+            f"For assistance in using SFTP to upload files to CQLS please go to: https://www.hostinger.com/tutorial/h" +
+            f"ow-to-use-sftp-to-safely-transfer-files/\n"
+        )
+        print(f"Exiting.\n")
+        exit()
+
+    flankseq = dirSelect("PutFlankingSequenceFilesHere/")
 
     try:
-        if okGo("DIGITfiles/BlastOutput/" + listDirs[int(sel) - 1], ["A188", "B73", "W22"]):
-            print(f"\nFinding genomic sequences for alleles in {listDirs[int(sel) - 1]}.")
-            now = time.time()
-            subprocess.run(
-                [
-                    "SGE_Batch",
-                    "-c",
-                    f"python3 DIGITfiles/SequencesFromBlast.py {listDirs[int(sel) - 1]}",
-                    "-q",
-                    "bpp",
-                    "-P",
-                    "8",
-                    "-r",
-                    f"sge.seqFromBlast_{listDirs[int(sel) - 1]}_{now}"
-                ]
-            )
-
-            print(
-                "Return later to continue to continue the primer making process with building the predicted insertion sequences. SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running time may vary wildly.")
-
+        now = time.time()
+        print(flankseq)
+        subprocess.run(
+            [
+                "sh",
+                f"./DIGITfiles/RunBlastInitial.sh",
+                f"{flankseq}"
+            ]
+        )
+        print(
+            f"SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Runni" +
+            f"ng time may vary wildly.\n"
+        )
+        print(
+            f"Return later to continue to continue the primer making process with building the predicted insertion se" +
+            f"quences and running them against Primer3.\n"
+        )
+        print(
+            f"Output files for Blast results will be located in the DIGITfiles/BlastOutput directory.\n")
+        print(f"Goodbye.\n")
     except:
-        print(f"\nPlease don't be weird, just select a real directory. Exiting.")
+        print("Well that didn't work. Exiting.")
+        exit()
+
+
+def runSequencesFromBlast():
+    flankseq = dirSelect("DIGITfiles/BlastOutput")
+
+    if okGo("DIGITfiles/BlastOutput/" + flankseq, ["A188", "B73", "W22"]):
+        print(f"\nFinding genomic sequences for alleles in {flankseq}.")
+        now = time.time()
+        subprocess.run(
+            [
+                "SGE_Batch",
+                "-c",
+                f"python3 DIGITfiles/SequencesFromBlast.py {flankseq}",
+                "-q",
+                "bpp",
+                "-P",
+                "8",
+                "-r",
+                f"sge.runSequencesFromBlast_{flankseq}_{now}"
+            ]
+        )
+
+        print(
+            f"\nReturn later to continue to continue the primer making process with building the predicted insertion " +
+            f"sequences. SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command " +
+            f"line. Running time may vary wildly.\n"
+        )
+        exit()
 
 
 def runGetPrimersAndVerify():
-    listDirs = os.listdir("DIGIToutput/")
+    flankseq = dirSelect("DIGITfiles/BlastOutput")
 
-    print(
-        f"\nSelect a directory to work with. Make sure you have completed Part 1 for the dataset you are looking for.\n")
+    if okGo("DIGIToutput/" + flankseq + "/Primer3Files/Output", ["Primer3Output"]):
+        print(
+            f"Verifying DsGFP insertion sequences for alleles in {flankseq} using wildtype sequences and Primer3 Ouput."
+        )
+        now = time.time()
+        subprocess.run(
+            [
+                "SGE_Batch",
+                "-c",
+                f"python3 DIGITfiles/GetPrimers.py {flankseq}",
+                "-q",
+                "bpp",
+                "-P",
+                "8",
+                "-r",
+                f"sge.runGetPrimersAndVerify_{flankseq}_{now}"
+            ]
+        )
 
-    for i in range(0, len(listDirs)):
-        print(f"({i + 1}) {listDirs[i]}")
-    print()
-
-    sel = input()
-
-    try:
-        if okGo("DIGIToutput/" + listDirs[int(sel) - 1], ["WorkingSet", "Primer3Output"]):
-            # print(listFiles[int(sel) - 1])
-            print(
-                f"\nBuilding DsGFP insertion sequences and creating Primer3 input for alleles in {listDirs[int(sel) - 1]}.")
-            now = time.time()
-            subprocess.run(
-                [
-                    "SGE_Batch",
-                    "-c",
-                    f"python3 DIGITfiles/GetPrimers.py {listDirs[int(sel) - 1]}",
-                    "-q",
-                    "bpp",
-                    "-P",
-                    "8",
-                    "-r",
-                    f"sge.getPrimers_{listDirs[int(sel) - 1]}_{now}"
-                ]
-            )
-
-            print(
-                "Return later to continue to continue the primer making process with building the predicted insertion sequences. SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running time may vary wildly.")
-
-    except:
-        print(f"\nPlease don't be weird, just select a real directory. Exiting.")
+        print(
+            f"Return later to continue to continue the primer making process with building the predicted insertion se" +
+            f"quences. SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command li" +
+            f"ne. Running time may vary wildly.\n"
+        )
 
 
 def main():
     print(
-        f"Welcome to DIGIT, the premiere tool for predicting DsGFP insertion" +
-        f" sequences in maize and building primers for those sequences. " +
-        f"Please select from the following menu options:\n\n" +
-        f"(1) Parse Blast results and find primers\n" +
-        f"(2) Verify primers from part 1\n"
+        f"Welcome to DIGIT, the premiere tool for predicting DsGFP insertion sequences in maize and building primers " +
+        f"for those sequences. Please select from the following menu options:\n\n"
     )
+    print(
+        f"(1) Blast a collection of flanking sequences against maize genomes A188v1, B73v5, and W22v2")
+    print(f"(2) Parse Blast results and find primers")
+    print(f"(3) Parse primer data and run verification")
+    print(f"(4) Remove extraneous sge files from directory")
+    print(f"(5) Use 'qstat' to check job status\n")
+
     sel = input()
     if sel == "1":
-        runSequencesFromBlast()
+        runBlast()
     elif sel == "2":
+        runSequencesFromBlast()
+    elif sel == "3":
         runGetPrimersAndVerify()
+    elif sel == "4":
+        subprocess.run(
+            [
+                "sh",
+                f"./DIGITfiles/CleanUpDirectory.sh",
+            ]
+        )
+    elif sel == "5":
+        print("qstat")
+        subprocess.run(
+            ["qstat"]
+        )
     else:
         print("Bye")
 

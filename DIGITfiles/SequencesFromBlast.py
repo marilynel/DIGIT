@@ -174,7 +174,7 @@ def pickGenome(allele, bestBitScore):
 
 ### store data ###
 def writeToBestQueriesFile(listQueries, flankseq):
-    with open("DIGIToutput/" + flankseq + "/BestQueriesByGenome_" + flankseq + ".csv",
+    with open("DIGIToutput/" + flankseq + "/DataStats/BestQueriesByGenome_" + flankseq + ".csv",
               "w+") as newfile:
         newfile.write(
             "query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_sc" +
@@ -336,9 +336,9 @@ def buildCoordinateSetsForFilterFasta():
 def runFilterfasta():
     coorA, coorB, coorW = buildCoordinateSetsForFilterFasta()
 
-    seqDataA = filterFasta("DIGITfiles/Genomes/Zm-A188-REFERENCE-KSU-1.0.fa", coorA)
-    seqDataB = filterFasta("DIGITfiles/Genomes/Zm-B73-REFERENCE-NAM-5.0.fa", coorB)
-    seqDataW = filterFasta("DIGITfiles/Genomes/Zm-W22-REFERENCE-NRGENE-2.0.fa", coorW)
+    seqDataA = filterFasta("DIGITfiles/Genomes/A188v1/Zm-A188-REFERENCE-KSU-1.0.fa", coorA)
+    seqDataB = filterFasta("DIGITfiles/Genomes/B73v5/Zm-B73-REFERENCE-NAM-5.0.fa", coorB)
+    seqDataW = filterFasta("DIGITfiles/Genomes/W22v2/Zm-W22-REFERENCE-NRGENE-2.0.fa", coorW)
 
     parseFilterfastaData(seqDataA)
     parseFilterfastaData(seqDataB)
@@ -369,7 +369,8 @@ def parseFilterfastaData(seqData):
 ### finding primers ###
 def runPrimer3(inputFile, flankseq):
     now = int(time.time())
-    with open("DIGIToutput/" + flankseq + "/Primer3Output_" + flankseq + ".txt", "w") as outfile:
+    with open("DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt",
+              "w") as outfile:
         subprocess.run(
             [
                 "primer3_core",
@@ -381,26 +382,37 @@ def runPrimer3(inputFile, flankseq):
 
 ### finding primers ###
 def createPrimer3Input(flankseq):
-    with open("DIGIToutput/" + flankseq + "/Primer3Input_" + flankseq + ".txt", "w") as p3file:
+    with open("DIGIToutput/" + flankseq + "/Primer3Files/Input/Primer3Input_" + flankseq + ".txt",
+              "w") as p3file:
         for allele in queriesWorkingSet:
             leftP3 = Primer3Object("generic", "left", queriesWorkingSet[allele])
             rightP3 = Primer3Object("generic", "right", queriesWorkingSet[allele])
             newInputStr = leftP3.inputStr + rightP3.inputStr
             p3file.write(newInputStr)
-    return "DIGIToutput/" + flankseq + "/Primer3Input_" + flankseq + ".txt"
+    return "DIGIToutput/" + flankseq + "/Primer3Files/Input/Primer3Input_" + flankseq + ".txt"
 
 
 def main():
     flankseq = sys.argv[1]
 
-    isExist = os.path.exists(f"DIGITfiles/BlastOutput/{flankseq}")
-    if not isExist:
-        os.makedirs(f"DIGITfiles/BlastOutput/{flankseq}")
+    necessaryDirs = [
+        f"DIGIToutput/{flankseq}",
+        f"DIGIToutput/{flankseq}/DataSets",
+        f"DIGIToutput/{flankseq}/DataStats",
+        f"DIGIToutput/{flankseq}/Primer3Files",
+        f"DIGIToutput/{flankseq}/Primer3Files/Input",
+        f"DIGIToutput/{flankseq}/Primer3Files/Output",
+        f"DIGIToutput/{flankseq}/WTVerification"
+    ]
+
+    for dir in necessaryDirs:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
     findBlastOutputFiles(f"DIGITfiles/BlastOutput/{flankseq}")
     list_of_queries = setBestForGenome(flankseq)
     setBestQuery(list_of_queries)
-    queriesToJSON(f"DIGIToutput/" + flankseq + "/AllBlastData_" + flankseq + ".json")
+    queriesToJSON(f"DIGIToutput/" + flankseq + "/DataSets/AllBlastData_" + flankseq + ".json")
     buildQueriesWorkingSet()
 
     runFilterfasta()
@@ -408,7 +420,7 @@ def main():
     inputFile = createPrimer3Input(flankseq)
     runPrimer3(inputFile, flankseq)
 
-    workingQueriesToJSON(f"DIGIToutput/{flankseq}/WorkingSet_{flankseq}.json")
+    workingQueriesToJSON(f"DIGIToutput/{flankseq}/DataSets/WorkingSet_{flankseq}.json")
 
 
 if __name__ == '__main__':
