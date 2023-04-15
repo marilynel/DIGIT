@@ -11,6 +11,7 @@ queriesWorkingSet = {}
 # TODO: add parsing to primer3object?
 
 def getDataFromJSON(filename):
+    print("running getDataFromJSON")
     '''
     Parse a JSON file and return a JSON object (key:value format)
     '''
@@ -22,6 +23,7 @@ def getDataFromJSON(filename):
 
 
 def createQueryStruct(filename):
+    print("running createqueryStruct")
     dataFromJSON = getDataFromJSON(filename)
     for allele in dataFromJSON:
         if allele not in queriesWorkingSet:
@@ -30,6 +32,7 @@ def createQueryStruct(filename):
 
 
 def readPrimer3Output(filename):
+    print("running readPrimer3Outpu")
     with open(filename, "r") as p3file:
         outputDict = {}  # create a dictionary for each output item
         for line in p3file:
@@ -52,6 +55,7 @@ def queriesToJSON(filename):
     '''
     Converts dictionary to JSON object and writes it to a file.
     '''
+    print("running queriesToJSON")
     jsonObject = {}
 
     for q in queriesWorkingSet:
@@ -66,41 +70,48 @@ def queriesToJSON(filename):
 
 
 def createPrimer3VerificationInput(flankseq):
-    with open("DIGIToutput/" + flankseq + "/Primer3VerificationInput_" + flankseq + ".txt",
-              "w") as p3file:
+    print("running createPrimer3VerificationINput")
+    with open(
+            "DIGIToutput/" + flankseq + "/WTVerification/Primer3VerificationInput_" + flankseq + ".txt",
+            "w") as p3file:
         for allele in queriesWorkingSet:
             leftP3 = Primer3Object("check_primers", "left", queriesWorkingSet[allele])
             rightP3 = Primer3Object("check_primers", "right", queriesWorkingSet[allele])
             newInputStr = leftP3.inputStr + rightP3.inputStr
             p3file.write(newInputStr)
-    return "DIGIToutput/" + flankseq + "/Primer3VerificationInput_" + flankseq + ".txt"
+    return "DIGIToutput/" + flankseq + "/WTVerification/Primer3VerificationInput_" + flankseq + ".txt"
 
 
 def runPrimer3(inputFile, flankseq):
+    print("running runPrimer3")
     # now = int(time.time())
-    with open("DIGIToutput/" + flankseq + "/Primer3VerificationOutput_" + flankseq + ".txt",
-              "w") as outfile:
+    with open(
+            "DIGIToutput/" + flankseq + "/WTVerification/Primer3VerificationOutput_" + flankseq + ".txt",
+            "w") as outfile:
         subprocess.run(
             [
                 "primer3_core",
                 inputFile
             ],
-            stdout=outfile, text=True
+            stdout=outfile  # ,text=True
         )
 
 
 def main():
+    print("running main")
     flankseq = sys.argv[1]
 
-    workingQueriesFile = "DIGIToutput/" + flankseq + "/WorkingSet_" + flankseq + ".json"
-    primer3OutputFile = "DIGIToutput/" + flankseq + "/Primer3Output_" + flankseq + ".txt"
+    workingQueriesFile = "DIGIToutput/" + flankseq + "/DataSets/WorkingSet_" + flankseq + ".json"
+    primer3OutputFile = "DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt"
 
     createQueryStruct(workingQueriesFile)
     readPrimer3Output(primer3OutputFile)
-    queriesToJSON("DIGIToutput/" + flankseq + "/WorkingSet_" + flankseq + "_withPrimers.json")
+    queriesToJSON(
+        "DIGIToutput/" + flankseq + "/DataSets/WorkingSet_" + flankseq + "_withPrimers.json")
 
     # make verification input???
     verfInput = createPrimer3VerificationInput(flankseq)
+    print(verfInput)
     runPrimer3(verfInput, flankseq)
 
 

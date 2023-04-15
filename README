@@ -7,7 +7,44 @@ Digital Insertion Tool (????)
 System requirements:
 
 Python3
-Perl
+bash
+
+***********************************************************************************************************************************
+SETUP
+
+1.  download database fasta files -- from where? provide link
+
+2.  make blastable database with:
+
+    SGE_Batch -c 'makeblastdb -in DIGITfiles/Genomes/<database>/<database_fasta_file> -out DIGITfiles/Genomes/<database>/<database>
+    -dbtype nucl -title <database> -parse_seqids' -q bpp -P 8 -r sge.makeblastdb<database>
+
+    TODO: maybe write a script to do this?
+
+3.  upload fasta files into DIGITfiles/PutFlankingSequenceFilesHere/
+
+    Helpful link for uploading files using SFTP:
+
+    https://www.hostinger.com/tutorials/how-to-use-sftp-to-safely-transfer-files/
+
+4.  run venv? would need ot set one up
+
+***********************************************************************************************************************************
+
+PART 1: BLAST
+
+The first available option for using the DIGIT tool is to perform a BLAST search of the flanking sequence fasta file against the 3
+standard maize genomes, A188v1, B73v5, and W22v2. This step must be completed in order to find any further primer data. BLAST out-
+put arrives as a .tab file that will appear in DIGITfiles/BlastOutput/<flankseq>/ . There will be 3 files, one for each of the
+maize genomes listed before.
+
+To use this feature, simply follow the prompts given by the program when running. Be sure to select the correct flanking sequence
+fasta file.
+
+***********************************************************************************************************************************
+
+PART 2: PRIMER3
+
 
 
 
@@ -30,7 +67,9 @@ what the fuck does this shit do???
 
 3.  compares insertions and picks the best one using bit score and relative knowledge of genome
 
-4.  submits filterfasta requests to SGE
+4.  parses relevant genome files for the desired subsequences
+
+5.
 
 
 
