@@ -3,9 +3,6 @@ import subprocess
 import time
 
 
-# from DIGITfiles.Query import Query
-# from DIGITfiles.Sequences import Sequences
-
 def okGo(dirname, fileSubstrings):
     ok = False
     listDirs = os.listdir(dirname)
@@ -28,6 +25,7 @@ def dirSelect(dirname):
     print(
         f"\nSelect a directory to work with. Make sure the folder you need is in the {dirname} folder.\n")
 
+    listDirs.sort()
     for i in range(0, len(listDirs)):
         print(f"({i + 1}) {listDirs[i]}")
 
@@ -42,7 +40,6 @@ def dirSelect(dirname):
 
 def runBlast():
     listDirs = os.listdir("PutFlankingSequenceFilesHere/")
-    # listDirs = os.listdir("DIGITfiles/NotInUse/emptyDir/")
     if not listDirs:
         print(
             f"\nThere are no fasta files of flanking sequences available to Blast. Upload the flanking sequence file " +
@@ -112,14 +109,18 @@ def runSequencesFromBlast():
 
 
 def runGetPrimersAndVerify():
-    flankseq = dirSelect("DIGITfiles/BlastOutput")
+    # Select working directory
+    flankseq = dirSelect("DIGIToutput")
 
+    # make sure P3 outputfiles exiist in that dir
     if okGo("DIGIToutput/" + flankseq + "/Primer3Files/Output", ["Primer3Output"]):
         print(
             f"Verifying DsGFP insertion sequences for alleles in {flankseq} using wildtype sequences and Primer3 Ouput."
         )
         now = time.time()
-        subprocess.run(
+
+        # run subprocess as sge batch job
+        subprocess.run(  # ["python3", "DIGITfiles/GetPrimers.py", flankseq])
             [
                 "SGE_Batch",
                 "-c",
@@ -149,8 +150,9 @@ def main():
         f"(1) Blast a collection of flanking sequences against maize genomes A188v1, B73v5, and W22v2")
     print(f"(2) Parse Blast results and find primers")
     print(f"(3) Parse primer data and run verification")
-    print(f"(4) Remove extraneous sge files from directory")
-    print(f"(5) Use 'qstat' to check job status\n")
+    print(f"(4) Check verification for any issues and produce primer dataset")
+    print(f"(5) Remove extraneous sge files from directory")
+    print(f"(6) Use 'qstat' to check job status\n")
 
     sel = input()
     if sel == "1":
@@ -160,13 +162,15 @@ def main():
     elif sel == "3":
         runGetPrimersAndVerify()
     elif sel == "4":
+        print("TODO: check primer verification")
+    elif sel == "5":
         subprocess.run(
             [
                 "sh",
                 f"./DIGITfiles/CleanUpDirectory.sh",
             ]
         )
-    elif sel == "5":
+    elif sel == "6":
         print("qstat")
         subprocess.run(
             ["qstat"]

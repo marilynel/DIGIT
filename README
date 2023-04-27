@@ -79,3 +79,21 @@ what the fuck does this shit do???
 TODO: create venv with necessary modules? --> may not be worth the effort if run on CQLS
 
 TODO: add blast to program?
+
+
+
+NOTES:
+
+Here are the approximate sizes of all 10 chromosomes of the maize genome using the B73 reference genome:
+
+Chromosome 1: 307 million base pairs
+Chromosome 2: 242 million base pairs
+Chromosome 3: 211 million base pairs
+Chromosome 4: 174 million base pairs
+Chromosome 5: 223 million base pairs
+Chromosome 6: 169 million base pairs
+Chromosome 7: 139 million base pairs
+Chromosome 8: 145 million base pairs
+Chromosome 9: 124 million base pairs
+Chromosome 10: 141 million base pairs
+Note that these sizes are approximate and can vary slightly between different maize varieties and genome assemblies.

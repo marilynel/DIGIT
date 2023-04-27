@@ -6,8 +6,7 @@ Written by: Marilyn Leary 2023
     Input:
     filename        Path to fasta file of reference genome (many can be found at
                     https://www.ncbi.nlm.nih.gov/data-hub/genome/)
-    coordinates     A dictionary containing the information to look up in reference genome.
-    Format as follows:
+    coordinates     A dictionary containing the information to look up in reference genome. Format as follows:
 
                     coordinates = {
                         alleleName : [
@@ -21,13 +20,11 @@ Written by: Marilyn Leary 2023
                     As many allele coordinate sets as needed may be listed in this format.
 
     Output:
-    sequenceData    Dictionary containing sequences for each allele listed in coordinates. Format
-    as follows:
+    sequenceData    Dictionary containing sequences for each allele listed in coordinates. Format as follows:
 
                     sequenceData = {
                         alleleName : sequence01
-                        "R01C02_wt" :
-                        "TCAAGGGCACCAGCCGTCCTGCTCACTACCATGTCTTGTGGGACGAGAACAACTTCACAGCCGACGCACTGCAGACCCTCA
+                        "R01C02_wt" : "TCAAGGGCACCAGCCGTCCTGCTCACTACCATGTCTTGTGGGACGAGAACAACTTCACAGCCGACGCACTGCAGACCCTCA
                                         CAACAACCTTTGCTACACGTAAGCTAGCTGCTCACAAAAAGAGGTGTCAGTGTCAGTTCAGTTCCCTGAACACCGACCGT
                                         TAATATAATAGCTTGTCAAATTGCCGCTGCAGCTACGCGAGGTGCACGCGCTCTGTGTCCATTGGTAGGTTTGTCAAAGT
                                         TATCCATTGCTGAATCGATGCACGAGCAACAGATAAACCAAAAGATGCATATGCCTTCCTTGCAGTCCCGCCGGCGTACT
@@ -38,17 +35,19 @@ Written by: Marilyn Leary 2023
 
 '''
 
+
+
 import sys
+
 
 
 class FilterFasta:
     def __init__(self, coordinates):
-        self.dictAllCoordinates = {}  # keys = chr, values = list of all coordinates needed on
-        # that chromosome
-        self.dictMinCoordinates = {}  # TODO: structure?
-        self.dictMaxCoordinates = {}  # TODO: structure?
-        self.genomeStruct = {}  # TODO: structure?
-        self.listChr = []  # TODO: structure?
+        self.dictAllCoordinates = {}        # keys = chr, values = list of all coordinates needed on that chromosome
+        self.dictMinCoordinates = {}        # TODO: structure?
+        self.dictMaxCoordinates = {}        # TODO: structure?
+        self.genomeStruct = {}              # TODO: structure?
+        self.listChr = []                           # TODO: structure?
 
         self.__setVals__(coordinates)
         self.__setMinMax__()
@@ -65,8 +64,7 @@ class FilterFasta:
 
     def __setMinMax__(self):
         '''
-        Finds minimum and maximum coordinates for each chromosome. Used to limit how much data is
-        pulled from genome
+        Finds minimum and maximum coordinates for each chromosome. Used to limit how much data is pulled from genome
         file.
         '''
         for chr in self.dictAllCoordinates:
@@ -82,8 +80,7 @@ def filterFasta(filename, coordinates):
         for line in zfile:
             if line[0] == ">":
                 if chrSeq and (key in ffobj.listChr):
-                    ffobj.genomeStruct[key] = chrSeq[ffobj.dictMinCoordinates[key]:
-                                                     ffobj.dictMaxCoordinates[key]]
+                    ffobj.genomeStruct[key] = chrSeq[ffobj.dictMinCoordinates[key]:ffobj.dictMaxCoordinates[key]]
                 chrSeq, key = "", ""
                 key = line[1:].strip()
             else:
