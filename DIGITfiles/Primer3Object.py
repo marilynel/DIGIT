@@ -1,5 +1,4 @@
 from Sequences import Sequences
-
 from Query import Query
 
 
@@ -51,10 +50,13 @@ class Primer3Object:
         # TODO: are the penalties the same between generic output and verification output?
         self.primerPenaltyLeft = -1
         self.primerPenaltyRight = -1
+        self.tmLeft = -1
+        self.tmRight = -1
 
         # From WT verification
         self.primerPairProductSize = 0
         self.primerPairPenalty = -1
+        self.tmPair = -1
 
         self.inputStr = ""
 
@@ -107,6 +109,9 @@ class Primer3Object:
             self.primerSequenceRight = q.primerSequenceRight
 
     def __setInputData__(self):
+        '''
+        Set constant values for primer object using value of strand and task type.
+        '''
         if self.task == "generic":
             # Searching for allele-specific primers to match 3DsgG and GFP3UTR (from DsGFP element)
             if self.strand == 1:
@@ -134,12 +139,15 @@ class Primer3Object:
             self.productSizeStrLeft = "300-1100"
 
     def __buildInputStrGeneric__(self):
+        '''
+        Compose begining of input string for Generic P3 input.
+        '''
         self.inputStr = (
             # left primer
                 f"SEQUENCE_ID={self.primerNameLeft}\n" +
                 f"SEQUENCE_TEMPLATE={self.insertionSequence}\n" +
                 f"SEQUENCE_PRIMER_REVCOMP={self.primerSequenceRight}\n" +
-                f"PRIMER_MASK_KMERLIST_PATH=genomes/kmer_lists/zea_mays\n" +
+                f"PRIMER_MASK_KMERLIST_PATH=genomes/kmerLists/zea_mays\n" +
                 f"PRIMER_TASK={self.task}\n" +
                 f"PRIMER_PICK_LEFT_PRIMER=1\n" +
                 f"{self.oligoStr}" +
@@ -152,7 +160,7 @@ class Primer3Object:
                 f"SEQUENCE_ID={self.primerNameRight}\n" +
                 f"SEQUENCE_TEMPLATE={self.insertionSequence}\n" +
                 f"SEQUENCE_PRIMER={self.primerSequenceLeft}\n" +
-                f"PRIMER_MASK_KMERLIST_PATH=genomes/kmer_lists/zea_mays\n" +
+                f"PRIMER_MASK_KMERLIST_PATH=genomes/kmerLists/zea_mays\n" +
                 f"PRIMER_TASK={self.task}\n" +
                 f"PRIMER_PICK_LEFT_PRIMER=1\n" +
                 f"{self.oligoStr}" +
@@ -163,12 +171,15 @@ class Primer3Object:
         )
 
     def __buildInputStrValidate__(self):
+        '''
+        Compose begining of input string for Validation P3 input.
+        '''
         self.inputStr = (
                 f"SEQUENCE_ID={self.primerNameLeft}\n" +
                 f"SEQUENCE_TEMPLATE={self.wildtypeSequence}\n" +
                 f"SEQUENCE_PRIMER={self.primerSequenceLeft}\n" +
                 f"SEQUENCE_PRIMER_REVCOMP={self.primerSequenceRight}\n" +
-                f"PRIMER_MASK_KMERLIST_PATH=genomes/kmer_lists/zea_mays\n" +
+                f"PRIMER_MASK_KMERLIST_PATH=genomes/kmerLists/zea_mays\n" +
                 f"PRIMER_TASK={self.task}\n" +
                 f"PRIMER_PICK_LEFT_PRIMER=1\n" +
                 f"{self.oligoStr}" +
@@ -177,38 +188,49 @@ class Primer3Object:
                 f"{self.lastStr}"
         )
 
-    def __parseOutputStrGeneric__(self, outData):
+    def __initValsFromP3Output__(self, outData):
+        '''
+        Intialize values for a new P3 object from a dict parsed from the P3 output file.
+        '''
         # outData will be one set of = to = data from p3 output, dict form
         self.query = outData["SEQUENCE_ID"][:-1]
-
         # The insertion sequence may be used to verify that the output data and query data match
-        self.insertionSequence = outData["SEQUENCE_TEMPLATE"]
-        self.primerPairNumReturned = int(outData["PRIMER_PAIR_NUM_RETURNED"])
-        self.primerPairExplain = outData["PRIMER_PAIR_EXPLAIN"]
+        # self.insertionSequence = outData["SEQUENCE_TEMPLATE"]
+        if "PRIMER_PAIR_NUM_RETURNED" in outData:
+            self.primerPairNumReturned = int(outData["PRIMER_PAIR_NUM_RETURNED"])
+        else:
+            self.primerPairNumReturned = -1
+        if self.primerPairNumReturned > 0:
+            if self.task == "generic":
+                if "SEQUENCE_PRIMER_REVCOMP" in outData:
+                    # P3 output contains information on the left primer
+                    self.primerNameLeft = outData["SEQUENCE_ID"]
+                    self.primerSequenceLeft = outData["PRIMER_LEFT_0_SEQUENCE"]
+                    self.primerPenaltyLeft = outData["PRIMER_LEFT_0_PENALTY"]
+                    self.primerLeftProductSize = outData["PRIMER_PAIR_0_PRODUCT_SIZE"]
+                    self.tmLeft = outData["PRIMER_PAIR_0_PRODUCT_TM"]
 
-        if self.primerPairNumReturned != 0:
-            self.primerPairPenalty = outData["PRIMER_PAIR_0_PENALTY"]
-            if "SEQUENCE_PRIMER_REVCOMP" in outData:
-                # looking for the left primer
-                self.primerNameLeft = outData["SEQUENCE_ID"]
-                self.primerSequenceLeft = outData["PRIMER_LEFT_0_SEQUENCE"]
-                self.primerLeftExplain = outData["PRIMER_LEFT_EXPLAIN"]
-                self.primerPenaltyLeft = outData["PRIMER_LEFT_0_PENALTY"]
+                if "SEQUENCE_PRIMER" in outData:
+                    # P3 output contains information on the right primer
+                    self.primerNameRight = outData["SEQUENCE_ID"]
+                    self.primerSequenceRight = outData["PRIMER_RIGHT_0_SEQUENCE"]
+                    self.primerPenaltyRight = outData["PRIMER_RIGHT_0_PENALTY"]
+                    self.primerRightProductSize = outData["PRIMER_PAIR_0_PRODUCT_SIZE"]
+                    self.tmRight = outData["PRIMER_PAIR_0_PRODUCT_TM"]
 
-            else:
-                # looking for the right primer
-                self.primerNameRight = outData["SEQUENCE_ID"]
-                self.primerSequenceRight = outData["PRIMER_RIGHT_0_SEQUENCE"]
-                self.primerRightExplain = outData["PRIMER_RIGHT_EXPLAIN"]
-                self.primerPenaltyRight = outData["PRIMER_RIGHT_0_PENALTY"]
+            if self.task == "check_primers":
+                self.primerPairPenalty = outData["PRIMER_PAIR_0_PENALTY"]
+                self.tmPair = outData["PRIMER_PAIR_0_PRODUCT_TM"]
+                self.primerPairProductSize = outData["PRIMER_PAIR_0_PRODUCT_SIZE"]
+                print(f"pair penalty is {self.primerPairPenalty}")
 
-    def __parseOutputStrValidate__(self):
+    def __parseOutputStrValidate__(self, outData):
         self.query = outData["SEQUENCE_ID"]
         self.wildtypeSequence = outData["SEQUENCE_TEMPLATE"]
         self.primerPairNumReturned = int(outData["PRIMER_PAIR_NUM_RETURNED"])
-        self.primerPairExplain = outData["PRIMER_PAIR_EXPLAIN"]
-        self.primerRightExplain = outData["PRIMER_RIGHT_EXPLAIN"]
-        self.primerLeftExplain = outData["PRIMER_LEFT_EXPLAIN"]
+        # self.primerPairExplain = outData["PRIMER_PAIR_EXPLAIN"]
+        # self.primerRightExplain = outData["PRIMER_RIGHT_EXPLAIN"]
+        # self.primerLeftExplain = outData["PRIMER_LEFT_EXPLAIN"]
 
         if self.primerPairNumReturned != 0:
             self.primerPairPenalty = outData["PRIMER_PAIR_0_PENALTY"]

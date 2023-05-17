@@ -1,14 +1,10 @@
-import subprocess
 from Query import Query
 from FilterFasta import filterFasta
-from Sequences import Sequences
-from Primer3Object import Primer3Object
+from DIGITfiles.PrimerIDs import PrimerIDs
 from Utils import *
 import os
 import sys
 import json
-import glob
-import time
 
 # all queries is a dict with structure:
 #   {
@@ -215,7 +211,7 @@ def getBestQuery(genome, query):
     return
 
 
-def queriesToJSON(filename):
+def allQueriesToJSON(filename):
     '''
     Converts dictionary to JSON object and writes it to a file.
     '''
@@ -226,6 +222,7 @@ def queriesToJSON(filename):
     }
 
     for database in allQueries:
+        # queriesToJSON(filename + "_" + database + ".json", allQueries[database])
         for query in allQueries[database]:
             if query not in jsonObject[database]:
                 jsonObject[database][query] = []
@@ -331,17 +328,18 @@ def parseFilterfastaData(seqData):
 
 
 # TODO: maybe move this to Utils, same as input creation
+'''
 def runPrimer3(inputFile, flankseq):
     now = int(time.time())
-    with open("DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt",
-              "w") as outfile:
+    with open("DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt", "w") as outfile:
         subprocess.run(
             [
-                "primer3_core",
+                "primer3_core", 
                 inputFile
             ],
-            stdout=outfile, text=True
+            stdout=outfile,text=True
         )
+'''
 
 
 def makeDirectories(flankseq):
@@ -369,10 +367,13 @@ def main():
     listQueries = setBestForGenome()
     writeToBestQueriesFile(listQueries, flankseq)
 
-    queriesToJSON(f"DIGIToutput/" + flankseq + "/DataSets/AllBlastData_" + flankseq + ".json")
+    allQueriesToJSON(f"DIGIToutput/" + flankseq + "/DataSets/AllBlastData_" + flankseq + ".json")
     buildQueriesWorkingSet()
 
     runFilterfasta()
+
+    setPrimerIDsObj = PrimerIDs()
+    setPrimerIDsObj.__setPrimerIDs__(queriesWorkingSet)
 
     inputFile = writeP3InputFile(
         "DIGIToutput/" + flankseq + "/Primer3Files/Input/Primer3Input_" + flankseq + ".txt",
@@ -380,10 +381,14 @@ def main():
         flankseq,
         "generic"
     )
-    runPrimer3(inputFile, flankseq)
 
-    workingQueriesToJSON(f"DIGIToutput/{flankseq}/DataSets/WorkingSet_{flankseq}.json",
-                         queriesWorkingSet)
+    runPrimer3(
+        inputFile,
+        flankseq,
+        "DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt"
+    )
+
+    queriesToJSON(f"DIGIToutput/{flankseq}/DataSets/WorkingSet_{flankseq}.json", queriesWorkingSet)
 
 
 if __name__ == '__main__':

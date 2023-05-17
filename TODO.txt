@@ -27,4 +27,3 @@ Usage
 -   catch if user tries to do something prematurely
 -   give user an option to go back if they don't see the files they want
 -   present files in order (should be a simple sort function, just do it)
-    

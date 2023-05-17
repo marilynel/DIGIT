@@ -33,7 +33,7 @@ class Query:
         self.primerNameLeft = None
         self.primerNameRight = None
 
-        # TODO: determine if these are even needed
+        # Kept for personal ease of understanding
         self.sideMatchGFP3UTR = None  # right or left primer matches c GFP3UTR
         self.sideMatch3DsgG = None  # right or left primer matches c 3DsgG
 
@@ -50,23 +50,19 @@ class Query:
         self.primerSequenceLeft = "FAIL"
         self.primerSequenceRight = "FAIL"  # from primer3 output
 
-        self.primerLeftProductSize = -1  # from primer3 output
-        self.primerRightProductSize = -1  # from primer3 output
-        self.primerPairProductSize = -1  # TODO
-        self.tm = -1  # TODO: where does this come from?
-        self.primerPairPenalty = -1  # TODO: where should this come from? WT verification?
-        self.primerPenaltyLeft = -1  # from primer3 output
-        self.primerPenaltyRight = -1  # from primer3 output
-
-        self.primerLeftExplain = None
-        self.primerRightExplain = None
-        self.primerPairExplain = None
+        self.primerLeftProductSize = -1  # from generic primer3 output
+        self.primerRightProductSize = -1  # from generic primer3 output
+        self.primerPairProductSize = -1  # from WT verfication
+        self.tmLeft = -1  # from Generic P3 output
+        self.tmRight = -1  # from Generic P3 output
+        self.tmPair = -1  # from Validate P3 output
+        self.primerPenaltyLeft = -1  # from generic primer3 output
+        self.primerPenaltyRight = -1  # from generic primer3 output
+        self.primerPairPenalty = -1  # from WT verification
 
         # Set during comparison of alleles
-        self.bestAlleleForGenome = False  # true if this allele has best bit score across all
-        # instances in genome
-        self.bestHitForAllele = False  # true if this instance in this genome is the best for all
-        # versions of the allele
+        self.bestAlleleForGenome = False  # true if this allele has best bit score across all instances in genome
+        self.bestHitForAllele = False  # true if this instance in this genome is the best for all versions of the allele
 
     def __setValues__(self):
         self.__strandDirection__()
@@ -112,15 +108,15 @@ class Query:
             # plus strand
             self.sideMatchGFP3UTR = "right"  # gfp3utr is a left primer, match with right
             self.sideMatch3DsgG = "left"  # 3dsgg is a right primer, match with left
-            self.primerNameLeft = self.query + "b"  # left primer matches iwth 3dsgg
-            self.primerNameRight = self.query + "a"  # right primer matches with gfp3utr
+            self.primerNameLeft = "b_" + self.query  # left primer matches iwth 3dsgg
+            self.primerNameRight = "a_" + self.query  # right primer matches with gfp3utr
             self.strand = 1
         else:
             # minus strand
             self.sideMatchGFP3UTR = "left"  # gfp3utr is a right primer, match with left
             self.sideMatch3DsgG = "right"  # 3dsgg is a left primer, match with right
-            self.primerNameLeft = self.query + "a"  # left primer matches with gfp3utr
-            self.primerNameRight = self.query + "b"  # right primer matches witj 3dsgg
+            self.primerNameLeft = "a_" + self.query  # left primer matches with gfp3utr
+            self.primerNameRight = "b_" + self.query  # right primer matches witj 3dsgg
             self.strand = -1
 
     def __setqStartStatus__(self):
@@ -175,43 +171,18 @@ class Query:
         self.upperCoordinates = jsonObject["upperCoordinates"]
         self.lowerCoordinates = jsonObject["lowerCoordinates"]
         self.wildtypeCoordinates = jsonObject["wildtypeCoordinates"]
-        self.tm = jsonObject["tm"]
-        self.primerPairPenalty = jsonObject["primerPairPenalty"]
+        self.primerLeftProductSize = jsonObject["primerLeftProductSize"]
+        self.primerRightProductSize = jsonObject["primerRightProductSize"]
+        self.primerPairProductSize = jsonObject["primerPairProductSize"]
+        self.tmLeft = jsonObject["tmLeft"]
+        self.tmRight = jsonObject["tmRight"]
+        self.tmPair = jsonObject["tmPair"]
         self.primerPenaltyLeft = jsonObject["primerPenaltyLeft"]
         self.primerPenaltyRight = jsonObject["primerPenaltyRight"]
+        self.primerPairPenalty = jsonObject["primerPairPenalty"]
+
         self.bestAlleleForGenome = jsonObject["bestAlleleForGenome"]
         self.bestHitForAllele = jsonObject["bestHitForAllele"]
-        self.primerLeftExplain = jsonObject["primerLeftExplain"]
-        self.primerRightExplain = jsonObject["primerRightExplain"]
-        self.primerPairExplain = jsonObject["primerPairExplain"]
-
-    # TODO: get rid of this and replace with __updateQueryWithGenericP3Output__
-    '''
-    def __updateQueryPrimer3__(self, output_dict):
-        from Primer3Object import Primer3Object
-        # right primer
-        if "SEQUENCE_PRIMER" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] != "0":
-            self.primerPenaltyRight = output_dict["PRIMER_RIGHT_0_PENALTY"]
-            self.primerSequenceRight = output_dict["PRIMER_RIGHT_0_SEQUENCE"]
-            #self.primerPositionRight = output_dict["PRIMER_RIGHT_0"].split(",")[0]
-            self.primerRightProductSize = output_dict["PRIMER_PAIR_0_PRODUCT_SIZE"]
-        #else:
-        #    print(f"{self.query} has no right primer")
-        if "SEQUENCE_PRIMER" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] == "0":
-            print(f"{self.query} has no right primer")
-        # left primer
-        if "SEQUENCE_PRIMER_REVCOMP" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] 
-        != "0":
-            self.primerPenaltyLeft = output_dict["PRIMER_LEFT_0_PENALTY"]
-            self.primerSequenceLeft = output_dict["PRIMER_LEFT_0_SEQUENCE"]
-            #self.primerPositionLeft = output_dict["PRIMER_LEFT_0"].split(",")[0]
-            self.primerLeftProductSize = output_dict["PRIMER_PAIR_0_PRODUCT_SIZE"]
-        #else:
-        #    print(f"{self.query} has no left primer")
-        if "SEQUENCE_PRIMER_REVCOMP" in output_dict and output_dict["PRIMER_PAIR_NUM_RETURNED"] 
-        == "0":
-            print(f"{self.query} has no left primer")
-    '''
 
     def __validate__(self, selfObj, otherObj):
         if selfObj == otherObj:
@@ -220,37 +191,31 @@ class Query:
             print(f"Warning in {self.query}: {selfObj} and {otherObj} are not equivalent.")
             return False
 
-    def __updateQueryWithGenericP3Output__(self, p3obj):
+    def __updateQueryWithP3Output__(self, p3obj):
         from Primer3Object import Primer3Object
-        if self.__validate__(self.insertionSequence, p3obj.insertionSequence):
+        if p3obj.task == "generic":
             if p3obj.primerNameLeft:
                 self.primerNameLeft = p3obj.primerNameLeft
                 self.primerSequenceLeft = p3obj.primerSequenceLeft
                 self.primerLeftProductSize = p3obj.primerLeftProductSize
                 self.primerPenaltyLeft = p3obj.primerPenaltyLeft
-                self.primerLeftExplain = p3obj.primerLeftExplain
+                # self.primerLeftExplain = p3obj.primerLeftExplain
+                self.tmLeft = p3obj.tmLeft
 
             if p3obj.primerNameRight:
                 self.primerNameRight = p3obj.primerNameRight
                 self.primerSequenceRight = p3obj.primerSequenceRight
                 self.primerRightProductSize = p3obj.primerRightProductSize
                 self.primerPenaltyRight = p3obj.primerPenaltyRight
-                self.primerRightExplain = p3obj.primerRightExplain
+                # self.primerRightExplain = p3obj.primerRightExplain
+                self.tmRight = p3obj.tmRight
 
-    def __updateQueryWithVerificationP3Output__(self):
-        from Primer3Object import Primer3Object
-        self.__validate__(self.wildtypeSequence, p3obj.wildtypeSequence)
-        self.__validate__(self.primerNameLeft, p3obj.primerNameLeft)
-        self.__validate__(self.primerSequenceLeft, p3obj.primerSequenceLeft)
-        self.__validate__(self.primerLeftProductSize, p3obj.primerLeftProductSize)
-        self.__validate__(self.primerPenaltyLeft, p3obj.primerPenaltyLeft)
-        self.__validate__(self.primerLeftExplain, p3obj.primerLeftExplain)
-
-        self.__validate__(self.primerNameRight, p3obj.primerNameRight)
-        self.__validate__(self.primerSequenceRight, p3obj.primerSequenceRight)
-        self.__validate__(self.primerRightProductSize, p3obj.primerRightProductSize)
-        self.__validate__(self.primerPenaltyRight, p3obj.primerPenaltyRight)
-        self.__validate__(self.primerRightExplain, p3obj.primerRightExplain)
+        elif p3obj.task == "check_primers":
+            self.primerPairProductSize = p3obj.primerPairProductSize
+            self.primerPairPenalty = p3obj.primerPairPenalty
+            self.tmPair = p3obj.tmPair
+        else:
+            print(f"Something went wrong with {self.primerNameRight}.")
 
     def __toJSON__(self):
         json0bj = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
