@@ -156,15 +156,17 @@ def runVerifyPrimers():
         # run subprocess as sge batch job
         subprocess.run(  # ["python3", "DIGITfiles/GetPrimers.py", flankseq])
             [
-                "SGE_Batch",
-                "-c",
-                f"python3 DIGITfiles/VerifyPrimers.py {flankseq}",
-                "-q",
-                "bpp",
-                "-P",
-                "8",
-                "-r",
-                f"sge.verifyPrimers_{flankseq}_{now}"
+                # "SGE_Batch",
+                # "-c",
+                "python3",
+                "DIGITfiles/VerifyPrimers.py",
+                f"{flankseq}"
+                # "-q",
+                # "bpp",
+                # "-P",
+                ##"8",
+                # "-r",
+                # f"sge.verifyPrimers_{flankseq}_{now}"
             ]
         )
 

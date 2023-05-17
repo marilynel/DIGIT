@@ -96,10 +96,10 @@ def main():
                 fastafile.write(
                     f">{queriesWorkingSet[q].primerNameLeft}_ogRefGen_{queriesWorkingSet[q].genome}\n")
                 fastafile.write(f"{queriesWorkingSet[q].primerSequenceLeft}\n")
-            if queriesWorkingSet[q].primerSequenceLeft != "FAIL":
+            if queriesWorkingSet[q].primerSequenceRight != "FAIL":
                 fastafile.write(
-                    f">{queriesWorkingSet[q].primerNameLeft}_ogRefGen_{queriesWorkingSet[q].genome}\n")
-                fastafile.write(f"{queriesWorkingSet[q].primerSequenceLeft}\n")
+                    f">{queriesWorkingSet[q].primerNameRight}_ogRefGen_{queriesWorkingSet[q].genome}\n")
+                fastafile.write(f"{queriesWorkingSet[q].primerSequenceRight}\n")
 
     callBlastScript(
         primerDataPath + "/testPrimerFastaFile.fasta",
