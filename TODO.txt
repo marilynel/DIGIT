@@ -1,0 +1,29 @@
+General
+-   compare output infor to previous version for all flanking seqs
+-   go thru TODOs in Query.py
+-   get numbers list for old set of seqs and use those to compare/number
+-   TEST: run step 2 with and without setBestQuery() being called and compare results
+-   move f(x)s converting queries to json to utils
+-   look in folder for dbs and blast/filterfasta only against those
+
+
+Primer3
+-   check p3 input and output for key words set in Primer3Object.py
+-   compare penalty values between generic and verification output
+-   parse verification results and add to WorkingSet file
+-   Query.py: replace __updateQueryPrimer3__ with __updateQueryPrimer3__ (ass in p3obj instead of dict)
+-   use the abve for validation output as well
+-   Query.py: combine __updateQueryWithGenericP3Output__ and __updateQueryWithVerificationP3Output__
+
+Blast
+-   add usage to have user create blast repo?
+
+
+Sanger Seqs
+-   incorporate sanger seqs
+
+
+Usage
+-   catch if user tries to do something prematurely
+-   give user an option to go back if they don't see the files they want
+-   present files in order (should be a simple sort function, just do it)
