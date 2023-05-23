@@ -24,7 +24,8 @@ class Query:
         self.bitScore = float(items[11])  # used to rank alleles
         self.genome = genome  # genome database where allele instance was found
         self.numHits = num_hits  # total number of instances for query in genome
-        self.diff = 0  # TODO
+        ### NEW: changed default diff to -1, do not delete this comment until I can check the new outputs against old!!! 5/22 ###
+        self.percentDiff = -1  # TODO
         self.strand = 0  # plus or minus
         self.qStartStatus = False  # true if sStart = 1
         self.bitScoreStatus = False  # true if bitScore >= 80
@@ -151,7 +152,7 @@ class Query:
         self.bitScore = float(jsonObject["bitScore"])
         self.genome = jsonObject["genome"]
         self.numHits = int(jsonObject["numHits"])
-        self.diff = float(jsonObject["diff"])
+        self.percentDiff = float(jsonObject["percentDiff"])
         self.strand = int(jsonObject["strand"])
         self.qStartStatus = jsonObject["qStartStatus"]
         self.bitScoreStatus = jsonObject["bitScoreStatus"]
