@@ -7,6 +7,13 @@ from DIGITfiles.Utils import callBlastScript
 
 
 def okGo(dirname, fileSubstrings):
+    '''
+    Function okGo() ensures that the correct and necessary files exist in a directory in order to call another function
+    or subprocess. Returns boolean value. No connection to the band.
+    params:
+    -   dirname         string, directory to be searched
+    -   fileSubstrings  list of strings,files necessary to proceed
+    '''
     ok = False
     listDirs = os.listdir(dirname)
     for fileSubstring in fileSubstrings:
@@ -24,6 +31,11 @@ def okGo(dirname, fileSubstrings):
 
 
 def dirSelect(dirname):
+    '''
+    User selects directory or folder within param <dirname> (string) to continue program with. Presented as numbered
+    options in alphanumeric order. Exits if user selects an invalid int or noninteger value. Returns name of selected
+    folder or directory as a string.
+    '''
     listDirs = os.listdir(dirname)
     print(
         f"\nSelect a directory to work with. Make sure the folder you need is in the {dirname} folder.\n")
@@ -143,30 +155,19 @@ def runGetPrimersAndVerify():
 
 
 def runVerifyPrimers():
-    # Select working directory
     flankseq = dirSelect("DIGIToutput")
 
-    # make sure P3 outputfiles exiist in that dir
     if okGo("DIGIToutput/" + flankseq + "/WTVerification/Output", ["Primer3VerificationOutput"]):
         print(
             f"Parsing Primer3 wildtype verification results. Output will be in DIGIToutput/{flankseq}/ directory. For" +
             f" a consise list of the primers with relevant information, go to DIGIToutput/{flankseq}/DataSets/."
         )
         now = time.time()
-        # run subprocess as sge batch job
-        subprocess.run(  # ["python3", "DIGITfiles/GetPrimers.py", flankseq])
+        subprocess.run(
             [
-                # "SGE_Batch",
-                # "-c",
                 "python3",
                 "DIGITfiles/VerifyPrimers.py",
                 f"{flankseq}"
-                # "-q",
-                # "bpp",
-                # "-P",
-                ##"8",
-                # "-r",
-                # f"sge.verifyPrimers_{flankseq}_{now}"
             ]
         )
 

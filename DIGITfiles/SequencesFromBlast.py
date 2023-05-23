@@ -1,12 +1,17 @@
+import subprocess
 from Query import Query
 from FilterFasta import filterFasta
-from DIGITfiles.PrimerIDs import PrimerIDs
+from Sequences import Sequences
+from Primer3Object import Primer3Object
+from PrimerIDs import PrimerIDs
 from Utils import *
 import os
 import sys
 import json
+import glob
+import time
 
-# all queries is a dict with structure:
+# allQueries is a dict with structure:
 #   {
 #       databaseA:
 #           {
@@ -45,8 +50,10 @@ def findBlastOutputFiles(dirname):
 
 def processBlastOutput(filename):
     '''
-    Parse blast output files line by line, gathering data that will be used to create Query objects, which will be added
-    to the allQueries dataset. Functions get_num_hits() and get_genome() are called to help parse hash (#) lines.
+    Parse blast output files line by line, gathering data that will be used to create Query
+    objects, which will be added
+    to the allQueries dataset. Functions get_num_hits() and get_genome() are called to help parse
+    hash (#) lines.
     '''
     genome = ""
     num_hits = -1
@@ -66,7 +73,8 @@ def processBlastOutput(filename):
 
 def getGenome(line, genome):
     '''
-    Parse a line for string indicating the genome name. If line does not have that string, return genome as original
+    Parse a line for string indicating the genome name. If line does not have that string,
+    return genome as original
     value.
     '''
     blastData = line.split(' ')
@@ -77,7 +85,8 @@ def getGenome(line, genome):
 
 def getNumHits(line, numHits):
     '''
-    Parse a line for string indicating the number of hits for that query in a genome. If line does not have that string,
+    Parse a line for string indicating the number of hits for that query in a genome. If line
+    does not have that string,
     return num_hits as original value.
     '''
     blastData = line.split(' ')
@@ -97,14 +106,14 @@ def setBestForGenome():
             if allele not in listQueries:
                 listQueries.append(allele)
             getBestQuery(genome, allele)
-    # writeToBestQueriesFile(listQueries, flankseq)
 
     return listQueries
 
 
 def makeStrBestInGenome(genome, allele, best_bit_score):
     '''
-    Find the specific hit that was specified as the best for that query ID and that genome (Query.best_for_genome ==
+    Find the specific hit that was specified as the best for that query ID and that genome (
+    Query.best_for_genome ==
     True) and return a string reporting data for the best_queries_by_genome.csv outfile.
     '''
     if allele in allQueries[genome]:
@@ -163,7 +172,8 @@ def writeToBestQueriesFile(listQueries, flankseq):
     with open("DIGIToutput/" + flankseq + "/DataStats/BestQueriesByGenome_" + flankseq + ".csv",
               "w+") as newfile:
         newfile.write(
-            f"query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_score,B73_num_hits,B73_qstart_status,W22_" +
+            f"query,A188_bit_score,A188_num_hits,A188_qstart_status,B73_bit_score,B73_num_hits,"
+            f"B73_qstart_status,W22_" +
             f"bit_score,W22_num_hits,W22_qstart_status,best_genomes\n"
         )
         for allele in listQueries:
@@ -181,32 +191,53 @@ def writeToBestQueriesFile(listQueries, flankseq):
                 "\n"
             )
             pickGenome(allele, bestBitScores)
-    return  # bestBitScores
+    return
 
 
 def getBestQuery(genome, query):
     '''
-    Sort hits to identify best hit for a query. Find the percent difference
-    between the best and second best hits.
+    Sort hits to identify best hit for a query. Find the percent difference between the best and
+    second best hits.
     '''
-    bestQuery = allQueries[genome][query][0]
-    secondBestQuery = None
-    for i in range(1, len(allQueries[genome][query])):
-        if allQueries[genome][query][i].bitScore > bestQuery.bitScore:
-            secondBestQuery = bestQuery
-            bestQuery = allQueries[genome][query][i]
-        elif allQueries[genome][query][i].bitScore < bestQuery.bitScore:
+    bestQuery = allQueries[genome][query][0]  # Query
+    secondBestQuery = None  # Query
+    for i in range(1, len(allQueries[genome][
+                              query])):  # iterate through Query objects in allQueries[genome][
+        # allele]
+        ### NEW: changed > to >= make sure it works before deleting this comment!!!! 5/22 ###
+        ### NOTE: this does change the output from before. yikes. still valid but the results are
+        # inconsistant...going to put the = on the "less than" comparison
+        ### note again: that fixed it.
+        if allQueries[genome][query][
+            i].bitScore > bestQuery.bitScore:  # if the new bit score is better than bestQuery's
+            # bit score
+            secondBestQuery = bestQuery  # redefine secondBestQuery as Query in bestQuery
+            bestQuery = allQueries[genome][query][i]  # redefine bestQuery as the current Query
+
+        elif allQueries[genome][query][
+            i].bitScore <= bestQuery.bitScore:  # if the new bit score is with than bestQuery's
+            # bit score
+            ###  NEW: changed > to >= make sure it works before deleting this comment!!!! 5/22 ###
             if not secondBestQuery or allQueries[genome][query][
-                i].bitScore > secondBestQuery.bitScore:
-                secondBestQuery = allQueries[genome][query][i]
+                i].bitScore >= secondBestQuery.bitScore:  # if either (there is no
+                # secondBestQuery) OR (new query's bit score is better than the secondBestWuery
+                # bit score)
+                secondBestQuery = allQueries[genome][query][
+                    i]  # redefine second best query as the new query
     # TODO: come back and make this work
-    # if second_best_query:
-    #    best_query.diff = abs(
-    #        ((best_query.bit_score - second_best_query.bit_score) / (best_query.bit_score + second_best_query.bit_score)) / 2) * 100
+    perDiff = -1
+    if secondBestQuery:  # if there is a second-best query
+        perDiff = abs(
+            (
+                    ((bestQuery.bitScore - secondBestQuery.bitScore) / (
+                                bestQuery.bitScore + secondBestQuery.bitScore)) / 2
+            ) * 100
+        )
 
     for i in range(0, len(allQueries[genome][query])):
         if allQueries[genome][query][i] == bestQuery:
             allQueries[genome][query][i].bestAlleleForGenome = True
+            allQueries[genome][query][i].percentDiff = perDiff
 
     return
 
@@ -222,7 +253,6 @@ def allQueriesToJSON(filename):
     }
 
     for database in allQueries:
-        # queriesToJSON(filename + "_" + database + ".json", allQueries[database])
         for query in allQueries[database]:
             if query not in jsonObject[database]:
                 jsonObject[database][query] = []
@@ -238,7 +268,8 @@ def allQueriesToJSON(filename):
 
 def buildQueriesWorkingSet():
     '''
-    Iterates through entire dataset, and creates a new smaller working dataset with just the "best" hit for each query.
+    Iterates through entire dataset, and creates a new smaller working dataset with just the
+    "best" hit for each query.
     '''
     for gen in allQueries:
         for q in allQueries[gen]:
@@ -250,7 +281,8 @@ def buildQueriesWorkingSet():
 # TODO: is there really no way to make this prettier??
 def buildCoordinateSetsForFilterFasta():
     '''
-    This function creates a dataset from queriesWorkingSet that can be passed to FilterFasta.py in the following format:
+    This function creates a dataset from queriesWorkingSet that can be passed to FilterFasta.py
+    in the following format:
 
         coordinates = {
             alleleName0 : [
@@ -327,21 +359,7 @@ def parseFilterfastaData(seqData):
             queriesWorkingSet[allele].insertionSequence = "__failed__"
 
 
-# TODO: maybe move this to Utils, same as input creation
-'''
-def runPrimer3(inputFile, flankseq):
-    now = int(time.time())
-    with open("DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt", "w") as outfile:
-        subprocess.run(
-            [
-                "primer3_core", 
-                inputFile
-            ],
-            stdout=outfile,text=True
-        )
-'''
-
-
+# TODO: move to utils?
 def makeDirectories(flankseq):
     necessaryDirs = [
         f"DIGIToutput/{flankseq}",
