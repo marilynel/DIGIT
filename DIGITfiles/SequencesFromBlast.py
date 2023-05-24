@@ -35,66 +35,6 @@ allQueries = {
 queriesWorkingSet = {}
 
 
-def findBlastOutputFiles(dirname):
-    '''
-    This function locates the Blast output file for the user selected set of flanking sequences.
-    '''
-    for subdir, dirs, files in os.walk(dirname):
-        for oneFile in files:
-            filename = os.path.join(subdir, oneFile)
-            if filename.find(".tab") != -1:
-                processBlastOutput(filename)
-
-    return
-
-
-def processBlastOutput(filename):
-    '''
-    Parse blast output files line by line, gathering data that will be used to create Query
-    objects, which will be added
-    to the allQueries dataset. Functions get_num_hits() and get_genome() are called to help parse
-    hash (#) lines.
-    '''
-    genome = ""
-    num_hits = -1
-    with open(filename, "r+") as blastfile:
-        for line in blastfile:
-            if line[0] == '#':
-                genome = getGenome(line, genome)
-                num_hits = getNumHits(line, num_hits)
-            else:
-                newQuery = Query(line, genome, num_hits)
-                newQuery.__setValues__()
-                if newQuery.query not in allQueries[genome]:
-                    allQueries[genome][newQuery.query] = []
-                allQueries[genome][newQuery.query].append(newQuery)
-    return
-
-
-def getGenome(line, genome):
-    '''
-    Parse a line for string indicating the genome name. If line does not have that string,
-    return genome as original
-    value.
-    '''
-    blastData = line.split(' ')
-    if blastData[1] == "Database:":
-        return blastData[2].split('/')[-1].strip()
-    return genome
-
-
-def getNumHits(line, numHits):
-    '''
-    Parse a line for string indicating the number of hits for that query in a genome. If line
-    does not have that string,
-    return num_hits as original value.
-    '''
-    blastData = line.split(' ')
-    if blastData[2] == "hits":
-        return int(blastData[1])
-    return numHits
-
-
 def setBestForGenome():
     '''
     Create dictionary identifying the best BLAST hit for each query, within each genome.
@@ -381,7 +321,8 @@ def main():
     flankseq = sys.argv[1]
     makeDirectories(flankseq)
 
-    findBlastOutputFiles(f"DIGITfiles/BlastOutput/{flankseq}")
+    findBlastOutputFiles(f"DIGITfiles/BlastOutput/{flankseq}", allQueries)
+
     listQueries = setBestForGenome()
     writeToBestQueriesFile(listQueries, flankseq)
 

@@ -173,3 +173,51 @@ def composePrimerListOutput(filename, queriesWorkingSet):
         for item in primerList:
             primerFile.write(item)
 
+
+def processBlastOutput(filename, genome):
+    '''
+    Parse blast output files line by line, gathering data that will be used to create Query objects, which will be added
+    to the allQueries dataset. Functions get_num_hits() and get_genome() are called to help parse hash (#) lines.
+    '''
+    genomeDB = {}
+    num_hits = -1
+    with open(filename, "r+") as blastfile:
+        for line in blastfile:
+            if line[0] == '#':
+                num_hits = getNumHits(line, num_hits)
+            else:
+                newQuery = Query(line, genome, num_hits)
+                newQuery.__setValues__()
+                if newQuery.query not in genomeDB:
+                    genomeDB[newQuery.query] = []
+                genomeDB[newQuery.query].append(newQuery)
+    return genomeDB
+
+
+def getNumHits(line, numHits):
+    '''
+    Parse a line for string indicating the number of hits for that query in a genome. If line does not have that string,
+    return num_hits as original value.
+    '''
+    blastData = line.split(' ')
+    if blastData[2] == "hits":
+        return int(blastData[1])
+    return numHits
+
+
+def findBlastOutputFiles(dirname, allQueries):
+    # This function locates the Blast output file for the user selected set of flanking sequences.
+
+    for subdir, dirs, files in os.walk(dirname):
+
+        for oneFile in files:
+            filepath = os.path.join(subdir, oneFile)
+            print(filepath)
+            if filepath.find(".tab") != -1:
+                filename = filepath.split("/")[-1]
+                genome = filename.split("_")[0]
+                allQueries[genome] = processBlastOutput(filepath, genome)
+
+    return  # allQueries
+
+

@@ -202,7 +202,7 @@ def parseAndBlastSangerSeqs():
         subprocess.run(
             [
                 "python3",
-                "DIGITfiles/ProcessSangerOutput.py",
+                "DIGITfiles/BlastSangerOutput.py",
                 f"PutSangerOutputFilesHere/{sangerseq}"
             ]
         )
