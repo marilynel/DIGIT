@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 # This script is called from within the DIGIT program to perform a Blast search of a selected fasta file against three
 # maize reference genomes, A188, B73, and W22. Results will be saved to the specifed output folder. Sge directories will

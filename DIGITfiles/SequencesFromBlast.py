@@ -1,15 +1,16 @@
-import subprocess
+# import subprocess
 from Query import Query
 from FilterFasta import filterFasta
 from Sequences import Sequences
 from Primer3Object import Primer3Object
 from PrimerIDs import PrimerIDs
 from Utils import *
-import os
+# import os
 import sys
-import json
-import glob
-import time
+
+# import json
+# import glob
+# import time
 
 # allQueries is a dict with structure:
 #   {
@@ -37,8 +38,7 @@ queriesWorkingSet = {}
 
 def buildCoordinateSetsForFilterFasta():
     '''
-    This function creates a dataset from queriesWorkingSet that can be passed to FilterFasta.py
-    in the following format:
+    This function creates a dataset from queriesWorkingSet that can be passed to FilterFasta.py in the following format:
 
         coordinates = {
             alleleName0 : [
@@ -117,22 +117,30 @@ def parseFilterfastaData(seqData):
 
 def main():
     flankseq = sys.argv[1]
+    b73only = int(sys.argv[2])
 
     necessaryDirs = [
-        f"DIGIToutput/{flankseq}",
-        f"DIGIToutput/{flankseq}/DataSets",
-        f"DIGIToutput/{flankseq}/DataStats",
-        f"DIGIToutput/{flankseq}/Primer3Files",
-        f"DIGIToutput/{flankseq}/Primer3Files/Input",
-        f"DIGIToutput/{flankseq}/Primer3Files/Output",
-        f"DIGIToutput/{flankseq}/WTVerification",
-        f"DIGIToutput/{flankseq}/WTVerification/Input",
-        f"DIGIToutput/{flankseq}/WTVerification/Output"
+        f"DIGIToutput/FlankingSequences",
+        f"DIGIToutput/FlankingSequences/{flankseq}",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/JSONfiles",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/CSVfiles",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3/FindingPrimers",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3/VerifyingPrimers"
     ]
 
     makeDirectories(necessaryDirs)
 
-    findBlastOutputFiles(f"DIGITfiles/BlastOutput/{flankseq}", allQueries)
+    genomeSpec = ""
+    if b73only == 2:
+        genomeSpec = "B73"
+        # flankseq += "B73Only"
+
+    # findBlastOutputFiles(f"DIGITfiles/BlastOutput/{flankseq}", allQueries, genomeSpec)
+    findBlastOutputFiles(
+        f"DIGIToutput/FlankingSequences/{flankseq}/BlastOutput/FlankingSequenceBlast", allQueries,
+        genomeSpec)
 
     listQueries = setBestForGenome(allQueries)
 
@@ -140,11 +148,12 @@ def main():
         listQueries,
         flankseq,
         allQueries,
-        "DIGIToutput/" + flankseq + "/DataStats/BestQueriesByGenome_" + flankseq + ".csv"
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/CSVfiles/BestQueriesByGenome_{flankseq}{genomeSpec}.csv"
     )
 
-    allQueriesToJSON(f"DIGIToutput/" + flankseq + "/DataSets/AllBlastData_" + flankseq + ".json",
-                     allQueries)
+    allQueriesToJSON(
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/JSONfiles/AllBlastData_{flankseq}{genomeSpec}.json",
+        allQueries)
 
     buildWorkingSetFromAllQueries(allQueries, queriesWorkingSet)
 
@@ -154,7 +163,7 @@ def main():
     setPrimerIDsObj.__setPrimerIDs__(queriesWorkingSet)
 
     inputFile = writeP3InputFile(
-        "DIGIToutput/" + flankseq + "/Primer3Files/Input/Primer3Input_" + flankseq + ".txt",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3/FindingPrimers/Primer3Input_{flankseq}{genomeSpec}.txt",
         queriesWorkingSet,
         flankseq,
         "generic"
@@ -163,10 +172,15 @@ def main():
     runPrimer3(
         inputFile,
         flankseq,
-        "DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt"
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3/FindingPrimers/Primer3Output_{flankseq}{genomeSpec}.txt"
     )
 
-    queriesToJSON(f"DIGIToutput/{flankseq}/DataSets/WorkingSet_{flankseq}.json", queriesWorkingSet)
+    # queriesToJSON(filepath, flankseq, queriesWorkingSet)
+    queriesToJSON(
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData",
+        flankseq,
+        queriesWorkingSet
+    )
 
 
 if __name__ == '__main__':

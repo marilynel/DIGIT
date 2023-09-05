@@ -1,6 +1,36 @@
 import json
 from Sequences import Sequences
 
+'''
+Plus strand:
+
+-2000                               [12345678]                            +2000                
+-------------------------------------------------------------------------------
+                                    ^ s. start                          ^ s.end
+
+first group: lower position indices
+    [(s.start-2000), (s.start+7)]
+second group: higher position indices
+    [s.start, (s.start+2000)]
+third group: wild type
+    [(s.start-2000), (s.start+2000)]
+
+
+Minus strand (numbered relative to plus strand):
+
+-2000                              [87654321]                             +2000                
+-------------------------------------------------------------------------------
+                      ^ s.end              ^ s. start                  
+
+
+first group: lower position indices
+    [(s.start-2000), (s.start)]
+second group: higher position indices
+    [(s.start-7), (s.start+2000)]
+third group: wild type
+    [(s.start-2000), (s.start+2000)]
+'''
+
 
 class Query:
     def __init__(self, line, genome, num_hits):
@@ -25,7 +55,7 @@ class Query:
         self.genome = genome  # genome database where allele instance was found
         self.numHits = num_hits  # total number of instances for query in genome
         ### NEW: changed default diff to -1, do not delete this comment until I can check the new outputs against old!!! 5/22 ###
-        self.percentDiff = -1  # TODO
+        self.percentDiff = -1
         self.strand = 0  # plus or minus
         self.qStartStatus = False  # true if sStart = 1
         self.bitScoreStatus = False  # true if bitScore >= 80
@@ -77,7 +107,6 @@ class Query:
         # For printing to best_queries_by_genome.csv
         return f"{self.bitScore},{self.numHits},{self.qStartStatus},"
 
-    # TODO: write out explanation of coordinates
     def __getUpperCoordinates__(self):
         if self.strand == 1:
             self.upperCoordinates = [self.sStart, self.sStart + 2000]
@@ -133,7 +162,6 @@ class Query:
         else:
             self.insertionSequence = "FAILED TO MAKE INSERTION SEQUENCE"
 
-    # TODO: is there a better way to do this?
     def __QueryFromJSON__(self, jsonObject):
         '''
         Annoying, but it works

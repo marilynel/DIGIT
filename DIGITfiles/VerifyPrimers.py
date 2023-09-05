@@ -67,30 +67,26 @@ def createBadPrimerQueryStruct():
 def main():
     # get all the primer data
     flankseq = sys.argv[1]
+    makeDirectories([
+        f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData",
+        f"DIGIToutput/FlankingSequences/{flankseq}/BlastOutput/PrimerBlast"
+    ])
 
     # Convert JSON file to query struct, function in Utils
-    createQueryStruct("DIGIToutput/" + flankseq + "/DataSets/WorkingSet_" + flankseq + ".json",
-                      queriesWorkingSet)
+    createQueryStruct(
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/JSONfiles/WorkingSet_{flankseq}.json",
+        queriesWorkingSet)
 
     # read P3 verification output & update primers
     readPrimer3Output(
-        "DIGIToutput/" + flankseq + "/WTVerification/Output/Primer3VerificationOutput_" + flankseq + ".txt",
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3/VerifyingPrimers/Primer3VerificationOutput_{flankseq}.txt",
         "check_primers",
         queriesWorkingSet
     )
 
-    ### START NEW ###
-
-    '''
-    TODO:
-    -   make a fasta of the primers to blast
-
-    '''
-    primerDataPath = "DIGIToutput/" + flankseq + "/PrimerData"
-    if not os.path.exists(primerDataPath):
-        os.makedirs(primerDataPath)
-
-    with open(primerDataPath + "/testPrimerFastaFile.fasta", "w+") as fastafile:
+    with open(
+            f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData/{flankseq}_PrimerFastaFile.fasta",
+            "w+") as fastafile:
         for q in queriesWorkingSet:
             if queriesWorkingSet[q].primerSequenceLeft != "FAIL":
                 fastafile.write(
@@ -100,26 +96,28 @@ def main():
                 fastafile.write(
                     f">{queriesWorkingSet[q].primerNameRight}_ogRefGen_{queriesWorkingSet[q].genome}\n")
                 fastafile.write(f"{queriesWorkingSet[q].primerSequenceRight}\n")
-
-    callBlastScript(
-        primerDataPath + "/testPrimerFastaFile.fasta",
-        primerDataPath,
-        "testPrimerFastaFile"
+                # callPrimerBlastScript(pathToFastaInput, pathToDesitinationDir)
+    callPrimerBlastScript(
+        f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData/{flankseq}_PrimerFastaFile.fasta",
+        f"DIGIToutput/FlankingSequences/{flankseq}/BlastOutput/PrimerBlast"
     )
-
-    ### END NEW ###
 
     queriesWithBadPrimers = createBadPrimerQueryStruct()
 
-    queriesToJSON("DIGIToutput/" + flankseq + "/DataSets/WorkingSet_" + flankseq + ".json",
-                  queriesWorkingSet)
+    # queriesToJSON(filepath, flankseq, queriesWorkingSet)
+    queriesToJSON(
+        f"DIGIToutput/FlankingSequences/{flankseq}/QueryData",
+        flankseq,
+        queriesWorkingSet
+    )
 
     composePrimerListOutput(
-        "DIGIToutput/" + flankseq + "/DataSets/PrimerResults_" + flankseq + ".csv",
+        f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData/PrimerResults_{flankseq}.csv",
         queriesWorkingSet)
-    composePrimerListOutput(
-        "DIGIToutput/" + flankseq + "/DataSets/FailedPrimers_" + flankseq + ".csv",
-        queriesWithBadPrimers)
+    if queriesWithBadPrimers:
+        composePrimerListOutput(
+            f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData/FailedPrimers_{flankseq}.csv",
+            queriesWithBadPrimers)
 
 
 if __name__ == "__main__":

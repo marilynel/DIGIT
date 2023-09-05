@@ -9,13 +9,14 @@ class PrimerIDs:
             for line in infile:
                 self.listOfPrimers.append(line.strip())
 
-        self.numPrimers = len(self.listOfPrimers)
+        self.numPrimers = len(self.listOfPrimers) + 1
 
     def __setPrimerIDs__(self, queriesWorkingSet):
         for query in queriesWorkingSet:
             leftNameExists, rightNameExists = False, False
             for primerName in self.listOfPrimers:
-                noNum = primerName[5:]
+                pts = primerName.split("_")
+                noNum = pts[0][-1] + "_" + pts[1]
                 # is left primer name in there? If so, rename left primer
                 if noNum == queriesWorkingSet[query].primerNameLeft:
                     queriesWorkingSet[query].primerNameLeft = primerName
