@@ -5,8 +5,6 @@ from Query import Query
 class Primer3Object:
     def __init__(self, task):
 
-        # TODO: make sure necessary vars match up between this and Query class, and that I'm picking them up in a natural
-        # way and in the correct spot
         # side refers to the side of the primer we are looking to find
         # Allele or query ID
         self.query = "query"
@@ -47,7 +45,6 @@ class Primer3Object:
         self.primerPairExplain = "tbd"
         self.primerWarning = False
 
-        # TODO: are the penalties the same between generic output and verification output?
         self.primerPenaltyLeft = -1
         self.primerPenaltyRight = -1
         self.tmLeft = -1
@@ -222,7 +219,7 @@ class Primer3Object:
                 self.primerPairPenalty = outData["PRIMER_PAIR_0_PENALTY"]
                 self.tmPair = outData["PRIMER_PAIR_0_PRODUCT_TM"]
                 self.primerPairProductSize = outData["PRIMER_PAIR_0_PRODUCT_SIZE"]
-                print(f"pair penalty is {self.primerPairPenalty}")
+                # print(f"pair penalty is {self.primerPairPenalty}")
 
     def __parseOutputStrValidate__(self, outData):
         self.query = outData["SEQUENCE_ID"]

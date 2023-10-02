@@ -15,27 +15,28 @@
 
 Oregon State University
 Author:     Marilyn Leary
+GitHub:     https://github.com/marilynel/DIGIT
 Contact:    marilyneleary@gmail.com
 
 ========================================================================================================================
 
 Digital Insertion Tool
 
-This tool is designed to help users develop primers to isolate potential DsGFP insertion sites (also referred to as 
-flanking sequeces) in the maize genome. The focus of this tool is specifically on maize reference genomes A188v1, B73v5, 
-and W22v2, and focus on potential Ds insertion sites previously isolated by Dooner & Du. The primers are designed to 
-match primers that have already been developed specifically for the DsGFP element, GFP3UTR and 3-DsgG. Please contact 
+This tool is designed to help users develop primers to isolate potential DsGFP insertion sites (also referred to as
+flanking sequeces) in the maize genome. The focus of this tool is specifically on maize reference genomes A188v1, B73v5,
+and W22v2, and focus on potential Ds insertion sites previously isolated by Dooner & Du. The primers are designed to
+match primers that have already been developed specifically for the DsGFP element, GFP3UTR and 3-DsgG. Please contact
 the author if you need assistance setting up the tool for a different reference genome, starting primers, or transposon.
 
-The various parts of DIGIT are described in this document. They must be completed in order for a given set of flanking 
-sequences. For example, you will not be able to complete step 2, "Parse Blast results and find primers", until you have 
+The various parts of DIGIT are described in this document. They must be completed in order for a given set of flanking
+sequences. For example, you will not be able to complete step 2, "Parse Blast results and find primers", until you have
 completed step 1, "Blast a collecton of flanking sequences against maize genomes A188v1, B73v5, and W22v2".
 
 ========================================================================================================================
 
 System requirements:
 
-Python3
+Python 3.6.8
 bash
 Sun Grid Engine
 
@@ -48,107 +49,109 @@ TODO: installing software as whole package
 TODO: will I be abe to include reference dbs, both regular and blastable?
  -> if not, I have a script in SetupResources/ to make refs blastable
 
+========================================================================================================================
+
 Insertion Site Flanking Sequence Files
 
 Upload a fasta-formatted file of the potential insertion site flanking sequences to be used into the directory
-PutFlankingSequenceFilesHere/. Make sure the name of the file is representative of the contents and ends with the .fasta 
-or .fa file extension. The name of that fasta file will be used in creating the output of DIGIT so that data can be 
-correctly associated with that file as the program executes. For example, 
-FlankingSequences_SingleGenomicSequences.fasta will be associated with all data with the phrase 
+PutFlankingSequenceFilesHere/. Make sure the name of the file is representative of the contents and ends with the .fasta
+or .fa file extension. The name of that fasta file will be used in creating the output of DIGIT so that data can be
+correctly associated with that file as the program executes. For example,
+FlankingSequences_SingleGenomicSequences.fasta will be associated with all data with the phrase
 "FlankingSequences_SingleGenomicSequences" in the file or directory name.
+
+========================================================================================================================
 
 Genome Database
 
-Maize genomes may be found at https://download.maizegdb.org/. Upload to the directory DIGITfiles/Genomes/<genomeName> 
-using the same SFTP method as before. This may take a while as these files are quite large. They will not be BLASTable 
+Maize genomes may be found at https://download.maizegdb.org/. Upload to the directory DIGITfiles/Genomes/<genomeName>
+using the same SFTP method as before. This may take a while as these files are quite large. They will not be BLASTable
 in the .fa file format. Call the script to make it BLASTable with the usage below:
+
     ./SetupResources/MakeReferenceGenomeBlastable.sh
+
+========================================================================================================================
 
 KMER lists
 
-KMER mask lists may be found at https://primer3.ut.ee/lists.htm and will be uploaded as above to directory 
-DIGITfiles/Genomes/kmerLists with SFTP. Both zea_mays_16.list and zea_mays_11.list will be needed. These are necessary 
-to complete the Primer3 portions of the program. 
+KMER mask lists may be found at https://primer3.ut.ee/lists.htm and will be uploaded as above to directory
+DIGITfiles/Genomes/kmerLists with SFTP. Both zea_mays_16.list and zea_mays_11.list will be needed. These are necessary
+to complete the Primer3 portions of the program.
 
+========================================================================================================================
 
 Helpful link for uploading files to CQLS cluster using SFTP:
 
 https://www.hostinger.com/tutorials/how-to-use-sftp-to-safely-transfer-files/
 
 
-************************************************************************************************************************
+========================================================================================================================
 
 STEP 1: BLAST FLANKING SEQUENCES
 
-The first available option for using the DIGIT tool is to perform a BLAST search of the flanking sequences (in fasta 
-file format) against 3 reference maize genomes, A188v1, B73v5, and W22v2. This step must be completed in order to find 
-any further primer data. BLAST output arrives as a .tab file that will appear in the DIGITfiles/BlastOutput/<flankseq>/ 
-directory, where <flankseq> is the name of the initial flanking sequence fasta file. There will be 3 output files in 
+The first available option for using the DIGIT tool is to perform a BLAST search of the flanking sequences (in fasta
+file format) against 3 reference maize genomes, A188v1, B73v5, and W22v2. This step must be completed in order to find
+any further primer data. BLAST output arrives as a .tab file that will appear in the DIGITfiles/BlastOutput/<flankseq>/
+directory, where <flankseq> is the name of the initial flanking sequence fasta file. There will be 3 output files in
 this subdirectory, one for each of the maize genomes listed before.
 
-Enter "1" when prompted to indicate you would like to use Blast. The contents of the PutFlankingSequencesFilesHere/ 
-directory will be presented; you only need to enter the corresponding number to your selection. Because Blast is run 
+Enter "1" when prompted to indicate you would like to use Blast. The contents of the PutFlankingSequencesFilesHere/
+directory will be presented; you only need to enter the corresponding number to your selection. Because Blast is run
 using the SGE queuing system on the CQLS cluster, it may take some time before the results are available. You can enter
 "qstat" on the command line to check the status of your job.
 
-***********************************************************************************************************************************
+========================================================================================================================
 
-PART 2: PRIMER3
+PART 2: PARSE BLAST OUTPUT, PRIMER3
 
+This next part parses the blast output files, identifies the best match for each insertion site sequence, finds the
+actual nucleotide sequence at that site, takes information on known primers for the DsGFP insertion, and crafts and
+submits a Primer3 input file to create the necessary primers.
 
+The best match is identified as the one that has the highest bit score. If there are multiple hits within a genome,
+either the best or one randomly selected from the best is chosen. If the best bit scores match across genomes, then hits
+are prioritized in the following order: B73, W22, A188.
 
+Once the best match is identified, DIGIT takes the insertion coordinates (strand, base pair position) given by blast and
+finds the nucleotide sequence around that insertion site from the genome database. The known DsGFP sequence is added to
+create a predicted insertion sequence.
 
+                                 insertion site
+            3'-------------------^------------------^---------------5'
+               genome sequence    DSGFP sequence     genome sequence
 
-what the fuck does this shit do???
+A Primer3 input file is made using these sequences, with the option to develop primers that match the GFP3UTR and 3DsgG
+primers given for the insertion. Those two primers will match the DsGFP insertion site, and Primer3 will return in its
+output primers that can be used with those in order to isolate the flanking sequence around the DsGFP insertion.
 
-1.  parses blast output
+========================================================================================================================
 
-    a.  blast output is for a specific set of alleles from Dooner and Du where they say the Ds
-        jumping gene likes to pop up
-    b.  needs to have output corresponding specifically with those three genomes
-            TODO: can I make it so genome dbs are not hardcoded in? rather its taken from what is
-            available in the program?
+PART 3: PARSE PRIMER3 OUTPUT, RUN PRIMER VERIFICATION
 
-2.  calculates the necessary coordinates needed for insertion prediction
+In this part, the Primer3 output from part 2 will be parsed and primers will be identified and named. Each insertion
+sequence will have two primers, one to match each of the given DsGFP primers. DIGIT takes the new predicted primers and
+submits them together to Primer3 with the wildtype flanking sequence (no insertion). This step helps verify that the
+predicted primers will work on the insertion site regardless of whether the insertion is actually there.
 
-    a.  what is sequence -2000 from insertion site? +2000 from insertion site?
-    b.  note the overhang
-    c.  -2000 to +2000 for wildtype -- used in validation
+========================================================================================================================
 
-3.  compares insertions and picks the best one using bit score and relative knowledge of genome
+PART 4: VERIFY AND PRODUCE PRIMER DATASET
 
-4.  parses relevant genome files for the desired subsequences
+Part 4 looks for and notes any issues with verification. Next, it produces a primer dataset (DIGIToutput/<flankseq>/
+DataSets/PrimerResults_<flankseq>.csv) for all primers and a failed primer dataset for failed primers and their
+reciprical primers (DIGIToutput/<flankseq>/DataSets/FailedPrimers_<flankseq>.csv).
 
-5.  
+Part 4 will also Blast the primers against the three genomes so that it is possible to see how often that primer appears
+in a genome .
 
-
-
-
-
-
-TODO: create venv with necessary modules? --> may not be worth the effort if run on CQLS
-
-TODO: add blast to program?
-
-
-
-NOTES:
-
-Here are the approximate sizes of all 10 chromosomes of the maize genome using the B73 reference genome:
-
-Chromosome 1: 307 million base pairs
-Chromosome 2: 242 million base pairs
-Chromosome 3: 211 million base pairs
-Chromosome 4: 174 million base pairs
-Chromosome 5: 223 million base pairs
-Chromosome 6: 169 million base pairs
-Chromosome 7: 139 million base pairs
-Chromosome 8: 145 million base pairs
-Chromosome 9: 124 million base pairs
-Chromosome 10: 141 million base pairs
-Note that these sizes are approximate and can vary slightly between different maize varieties and genome assemblies.
+TODO:
+- parse those results of the Blast
+- count and report number of instances
+- note if there is an instance near the original insertion site
 
 
+
+========================================================================================================================
 
 References:
 
@@ -158,12 +161,11 @@ Kmer Lists. https://primer3.ut.ee/lists.htm
 
 Reference Genomes. https://download.maizegdb.org/
 
+SFTP instructions. https://www.hostinger.com/tutorials/how-to-use-sftp-to-safely-transfer-files/
 
-Vollbrecht, E. et al. (2010). Genome-Wide Distribution of Transposed Dissociation Elements in Maize. Plant Cell. 2010 
+Vollbrecht, E. et al. (2010). Genome-Wide Distribution of Transposed Dissociation Elements in Maize. Plant Cell. 2010
 Jun; 22(6): 1667–1685. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2910982/
 
 
-Technical Help
 
-SFTP instructions. https://www.hostinger.com/tutorials/how-to-use-sftp-to-safely-transfer-files/
 

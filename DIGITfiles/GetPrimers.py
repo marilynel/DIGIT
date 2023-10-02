@@ -1,7 +1,31 @@
+'''
+GetPrimers.py
+    1. parses the initial Primer3 output file for primer information
+    2. saves primer data to the WorkingSet JSON document
+    3. composes a Primer3 input file to be used for verification
+    4. calls primer3_core with new Primer3 input file
+
+Written by: Marilyn Leary 2023
+
+Input:
+flankseq            Name of working folder, should be the same as the filename given to the
+original fasta file of
+                    flanking sequences.
+
+Output:
+WorkingSet_flankseq .json               Updated JSON document with parsed Primer3 data.
+Primer3VerificationInput_flankseq.txt   Input file to pass to primer3_core; contains wildtype
+sequence information as
+                                        well as the parsed Primer3 data.
+Primer3VerificationOutput_flankseq.txt  Output file produced by Primer3.
+
+'''
+
 from Query import Query
 from Sequences import Sequences
 from Primer3Object import Primer3Object
 from Utils import *
+
 import json
 import sys
 import subprocess
@@ -9,36 +33,21 @@ import subprocess
 queriesWorkingSet = {}
 
 
-# def runPrimer3(inputFile, flankseq):
-#    '''
-#    Submit wildtype verification (as inputFile) to primer3_core and redirect output to a similarly stored file.
-#    '''
-#    with open(
-#        "DIGIToutput/" + flankseq + "/WTVerification/Output/Primer3VerificationOutput_" + flankseq + ".txt", "w") as outfile:
-#        subprocess.run(
-#            [
-#                "primer3_core",
-#                inputFile
-##            ],
-#            stdout=outfile
-#        )
-
-
 def main():
     flankseq = sys.argv[1]
 
-    workingQueriesFile = "DIGIToutput/" + flankseq + "/DataSets/WorkingSet_" + flankseq + ".json"
-    primer3OutputFile = "DIGIToutput/" + flankseq + "/Primer3Files/Output/Primer3Output_" + flankseq + ".txt"
+    workingQueriesFile = f"DIGIToutput/FlankingSequences/" \
+                         f"{flankseq}/QueryData/JSONfiles/WorkingSet_{flankseq}.json"
+    primer3OutputFile = f"DIGIToutput/FlankingSequences/{
+    flankseq}/QueryData/Primer3/FindingPrimers/Primer3Output_{flankseq}.txt"
 
     createQueryStruct(workingQueriesFile, queriesWorkingSet)
     readPrimer3Output(primer3OutputFile, "generic", queriesWorkingSet)
-    # originally created new file, now just rewriting old file
-    # queriesToJSON("DIGIToutput/" + flankseq + "/DataSets/WorkingSet_" + flankseq +
-    # "_withPrimers.json", queriesWorkingSet)
-    queriesToJSON(workingQueriesFile, queriesWorkingSet)
+    queriesToJSON(flankseq, queriesWorkingSet)
 
     verfInput = writeP3InputFile(
-        "DIGIToutput/" + flankseq + "/WTVerification/Input/Primer3VerificationInput_" + flankseq + ".txt",
+        f"DIGIToutput/FlankingSequences/" \
+        f"{flankseq}/QueryData/Primer3/VerifyingPrimers/Primer3VerificationInput_{flankseq}.txt",
         queriesWorkingSet,
         flankseq,
         "check_primers"
@@ -47,7 +56,8 @@ def main():
     runPrimer3(
         verfInput,
         flankseq,
-        "DIGIToutput/" + flankseq + "/WTVerification/Output/Primer3VerificationOutput_" + flankseq + ".txt"
+        f"DIGIToutput/FlankingSequences/" \
+        f"{flankseq}/QueryData/Primer3/VerifyingPrimers/Primer3VerificationOutput_{flankseq}.txt",
     )
 
 

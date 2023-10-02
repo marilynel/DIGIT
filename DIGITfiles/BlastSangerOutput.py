@@ -10,15 +10,13 @@ Written by: Marilyn Leary 2023
 
     Output:
     Three Blast output files with path and naming convention:
-        DIGITfiles/BlastOutputSangerSeqs/<orderNumber>/<referenceGenome_vs_orderNumber>.tab
+        DIGITfiles/SangerSequences/<orderNumber>/BlastOutputSangerSeqs/<referenceGenome_vs_orderNumber>.tab
 '''
 
 import os
 import sys
 import re
 from difflib import SequenceMatcher
-import subprocess
-import time
 
 from Utils import *
 
@@ -109,18 +107,24 @@ def getSequenceID(metadata, notExact):
         return seqID[0] + "_ImperfectMatchDsGfp"
     return seqID[0]
 
-
+#TODO: file str
 def main():
-
     orderDir = sys.argv[1]
     filename = prepFasta(orderDir)
     order = orderDir.split("/")[-1]
-    makeDirectories(["DIGITfiles/BlastOutputSangerSeqs/" + order])
+    newDirs = [
+        "DIGIToutput/SangerSequences",
+        f"DIGIToutput/SangerSequences/{order}",
+        f"DIGIToutput/SangerSequences/{order}/BlastOutput"
+    ]
+    makeDirectories(newDirs)
+    # callBlastScript(pathToFastaInput, pathToDesitinationDir, fastaContents)
     callBlastScript(
         filename,
-        f"DIGITfiles/BlastOutputSangerSeqs/{order}",
+        f"DIGIToutput/SangerSequences/{order}/BlastOutput",
         order
     )
+
 
 if __name__ == '__main__':
     main()
