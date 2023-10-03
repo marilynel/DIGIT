@@ -1,4 +1,5 @@
 import json
+
 from Sequences import Sequences
 
 '''
@@ -54,7 +55,8 @@ class Query:
         self.bitScore = float(items[11])  # used to rank alleles
         self.genome = genome  # genome database where allele instance was found
         self.numHits = num_hits  # total number of instances for query in genome
-        ### NEW: changed default diff to -1, do not delete this comment until I can check the new outputs against old!!! 5/22 ###
+        ### NEW: changed default diff to -1, do not delete this comment until I can check the new
+        # outputs against old!!! 5/22 ###
         self.percentDiff = -1
         self.strand = 0  # plus or minus
         self.qStartStatus = False  # true if sStart = 1
@@ -92,8 +94,16 @@ class Query:
         self.primerPairPenalty = -1  # from WT verification
 
         # Set during comparison of alleles
-        self.bestAlleleForGenome = False  # true if this allele has best bit score across all instances in genome
-        self.bestHitForAllele = False  # true if this instance in this genome is the best for all versions of the allele
+        self.bestAlleleForGenome = False  # true if this allele has best bit score across all
+        # instances in genome
+        self.bestHitForAllele = False  # true if this instance in this genome is the best for all
+        # versions of the allele
+
+        self.bYearFamilies = None
+
+    def __findBYearFamilies__(self, familyDict):
+        if self.query in familyDict:
+            self.bYearFamilies = familyDict[self.query]
 
     def __setValues__(self):
         self.__strandDirection__()
@@ -209,9 +219,19 @@ class Query:
         self.primerPenaltyLeft = jsonObject["primerPenaltyLeft"]
         self.primerPenaltyRight = jsonObject["primerPenaltyRight"]
         self.primerPairPenalty = jsonObject["primerPairPenalty"]
-
+        self.bYearFamilies = jsonObject["bYearFamilies"]
         self.bestAlleleForGenome = jsonObject["bestAlleleForGenome"]
         self.bestHitForAllele = jsonObject["bestHitForAllele"]
+
+    def __workingSetCsvLine__(self):
+        return f"{self.query},{self.genome},{self.bYearFamilies},{self.chromosome}," + \
+               f"{self.perIdentity},{self.alignmentLength},{self.mismatches},{self.gapOpens}," + \
+               f"{self.qStart},{self.qEnd},{self.sStart},{self.sEnd},{self.eValue}," + \
+               f"{self.bitScore},{self.numHits},{self.percentDiff},{self.strand}," + \
+               f"{self.qStartStatus},{self.primerNameLeft},{self.primerSequenceLeft}," + \
+               f"{self.primerLeftProductSize},{self.primerPenaltyLeft},{self.primerNameRight}," + \
+               f"{self.primerSequenceRight},{self.primerRightProductSize}," + \
+               f"{self.primerPenaltyRight},{self.primerPairProductSize},{self.primerPairPenalty},\n"
 
     def __validate__(self, selfObj, otherObj):
         if selfObj == otherObj:
@@ -228,7 +248,6 @@ class Query:
                 self.primerSequenceLeft = p3obj.primerSequenceLeft
                 self.primerLeftProductSize = p3obj.primerLeftProductSize
                 self.primerPenaltyLeft = p3obj.primerPenaltyLeft
-                # self.primerLeftExplain = p3obj.primerLeftExplain
                 self.tmLeft = p3obj.tmLeft
 
             if p3obj.primerNameRight:
@@ -236,9 +255,7 @@ class Query:
                 self.primerSequenceRight = p3obj.primerSequenceRight
                 self.primerRightProductSize = p3obj.primerRightProductSize
                 self.primerPenaltyRight = p3obj.primerPenaltyRight
-                # self.primerRightExplain = p3obj.primerRightExplain
                 self.tmRight = p3obj.tmRight
-
         elif p3obj.task == "check_primers":
             self.primerPairProductSize = p3obj.primerPairProductSize
             self.primerPairPenalty = p3obj.primerPairPenalty
@@ -250,9 +267,46 @@ class Query:
         json0bj = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
         return json0bj
 
+    def __lookupPrint__(self):
+        print()
+        print(f"Allele\t\t\t{self.query}")
+        print(f"Genome\t\t\t{self.genome}")
+        print(f"Chromosome\t\t{self.chromosome}")
+        print(f"Start\t\t\t{self.sStart}")
+        print(f"End\t\t\t{self.sEnd}")
+        print(f"B Year Families\t\t{self.bYearFamilies}")
+        print(f"Left Primer Name\t{self.primerNameLeft}")
+        print(f"Left Primer Sequence\t{self.primerSequenceLeft}")
+        print(f"Right Primer Name\t{self.primerNameRight}")
+        print(f"Right Primer Sequence\t{self.primerSequenceRight}")
+        print()
+
+    def __leftPrimerDataLine__(self):
+        leftPrimerMatch, rightPrimerMatch = self.__primerSides__()
+        return f"{self.primerNameLeft},{self.query},{self.genome},{self.primerSequenceLeft}," \
+               f"{leftPrimerMatch},{self.primerLeftProductSize},{self.primerPairProductSize}," + \
+               f"{self.tmLeft},{self.primerPenaltyLeft},{self.primerPairPenalty}," + \
+               f"{self.bitScore},{self.numHits},{self.qStartStatus}\n"
+
+    def __rightPrimerDataLine__(self):
+        leftPrimerMatch, rightPrimerMatch = self.__primerSides__()
+        return f"{self.primerNameRight},{self.query},{self.genome},{self.primerSequenceRight}," \
+               f"{rightPrimerMatch},{self.primerRightProductSize},{self.primerPairProductSize}," + \
+               f"{self.tmRight},{self.primerPenaltyRight},{self.primerPairPenalty}," + \
+               f"{self.bitScore},{self.numHits},{self.qStartStatus}\n"
+
+    def __primerSides__(self):
+        leftPrimerMatch, rightPrimerMatch = "", ""
+        if self.sideMatchGFP3UTR == "right" and self.sideMatch3DsgG == "left":
+            leftPrimerMatch, rightPrimerMatch = "GFP3UTR", "3DsgG"
+        elif self.sideMatchGFP3UTR == "left" and self.sideMatch3DsgG == "right":
+            leftPrimerMatch, rightPrimerMatch = "3DsgG", "GFP3UTR"
+        else:
+            leftPrimerMatch, rightPrimerMatch = "FAIL", "FAIL"
+        return leftPrimerMatch, rightPrimerMatch
+
     def __iter__(self):
         iters = dict((x, y) for x, y in Query.__dict__.items() if x[:2] != '__')
         iters.update(self.__dict__)
         for x, y in iters.items():
             yield x, y
-

@@ -35,16 +35,13 @@ Written by: Marilyn Leary 2023
 
 '''
 
-
-# import sys
-
 class FilterFasta:
     def __init__(self, coordinates):
-        self.dictAllCoordinates = {}  # keys = chr, values = list of all coordinates needed on that chromosome
-        self.dictMinCoordinates = {}  # keys = chr, values = lowest int from chr list in dictAllCoordinates
-        self.dictMaxCoordinates = {}  # keys = chr, values = greatest int from chr list in dictAllCoordinates
-        self.genomeStruct = {}  # keys = chr, values = genomic sequence between max and min from above
-        self.listChr = []  # list of chromosomes data will need to be pulled from
+        self.dictAllCoordinates = {}        # keys = chr, values = list of all coordinates needed on that chromosome
+        self.dictMinCoordinates = {}        # keys = chr, values = lowest int from chr list in dictAllCoordinates
+        self.dictMaxCoordinates = {}        # keys = chr, values = greatest int from chr list in dictAllCoordinates
+        self.genomeStruct = {}              # keys = chr, values = genomic sequence between max and min from above
+        self.listChr = []                   # list of chromosomes data will need to be pulled from
 
         self.__setVals__(coordinates)
         self.__setMinMax__()
@@ -77,8 +74,7 @@ def filterFasta(filename, coordinates):
         for line in zfile:
             if line[0] == ">":
                 if chrSeq and (key in ffobj.listChr):
-                    ffobj.genomeStruct[key] = chrSeq[ffobj.dictMinCoordinates[key]:
-                                                     ffobj.dictMaxCoordinates[key]]
+                    ffobj.genomeStruct[key] = chrSeq[ffobj.dictMinCoordinates[key]:ffobj.dictMaxCoordinates[key]]
                 chrSeq, key = "", ""
                 key = line[1:].strip()
             else:
