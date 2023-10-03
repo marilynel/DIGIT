@@ -1,5 +1,7 @@
 from Sequences import Sequences
-from Query import Query
+
+
+# from Query import Query
 
 
 class Primer3Object:
@@ -10,8 +12,8 @@ class Primer3Object:
         self.query = "query"
 
         # Allele name plus a or b
-        self.primerNameLeft = None  # "primerNameLeft"
-        self.primerNameRight = None  # "primerNameRight"
+        self.primerNameLeft = None
+        self.primerNameRight = None
 
         # Sequences of primers; changed in output functions
         self.primerSequenceLeft = "primerSequenceLeft"
@@ -22,8 +24,6 @@ class Primer3Object:
         # task is generic or check_primers.
         # sequenceTemplate is DsGFP insertion sequence or wildtype sequence, depending on the task
         self.task = task
-        # self.sequenceTemplate = "seqTemplate"     # wt for verificaiton, insertion seq for
-        # original use
         self.insertionSequence = "insert"
         self.wildtypeSequence = "wildtype"
 
@@ -64,13 +64,13 @@ class Primer3Object:
         )
 
         self.sizeStr = (
-                f"PRIMER_OPT_SIZE=22\n" + \
-                f"PRIMER_MIN_SIZE=20\n" + \
-                f"PRIMER_MAX_SIZE=24\n" + \
-                f"PRIMER_OPT_TM=62.0\n" + \
-                f"PRIMER_MIN_TM=59.0\n" + \
-                f"PRIMER_MAX_TM=65.0\n" + \
-                f"PRIMER_TM_FORMULA=1\n" + \
+                f"PRIMER_OPT_SIZE=22\n" +
+                f"PRIMER_MIN_SIZE=20\n" +
+                f"PRIMER_MAX_SIZE=24\n" +
+                f"PRIMER_OPT_TM=62.0\n" +
+                f"PRIMER_MIN_TM=59.0\n" +
+                f"PRIMER_MAX_TM=65.0\n" +
+                f"PRIMER_TM_FORMULA=1\n" +
                 f"PRIMER_PAIR_MAX_DIFF_TM=5.0\n"
         )
 
@@ -192,7 +192,6 @@ class Primer3Object:
         # outData will be one set of = to = data from p3 output, dict form
         self.query = outData["SEQUENCE_ID"][:-1]
         # The insertion sequence may be used to verify that the output data and query data match
-        # self.insertionSequence = outData["SEQUENCE_TEMPLATE"]
         if "PRIMER_PAIR_NUM_RETURNED" in outData:
             self.primerPairNumReturned = int(outData["PRIMER_PAIR_NUM_RETURNED"])
         else:
@@ -219,15 +218,11 @@ class Primer3Object:
                 self.primerPairPenalty = outData["PRIMER_PAIR_0_PENALTY"]
                 self.tmPair = outData["PRIMER_PAIR_0_PRODUCT_TM"]
                 self.primerPairProductSize = outData["PRIMER_PAIR_0_PRODUCT_SIZE"]
-                # print(f"pair penalty is {self.primerPairPenalty}")
 
     def __parseOutputStrValidate__(self, outData):
         self.query = outData["SEQUENCE_ID"]
         self.wildtypeSequence = outData["SEQUENCE_TEMPLATE"]
         self.primerPairNumReturned = int(outData["PRIMER_PAIR_NUM_RETURNED"])
-        # self.primerPairExplain = outData["PRIMER_PAIR_EXPLAIN"]
-        # self.primerRightExplain = outData["PRIMER_RIGHT_EXPLAIN"]
-        # self.primerLeftExplain = outData["PRIMER_LEFT_EXPLAIN"]
 
         if self.primerPairNumReturned != 0:
             self.primerPairPenalty = outData["PRIMER_PAIR_0_PENALTY"]

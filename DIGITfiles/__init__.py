@@ -1,12 +1,13 @@
 __all__ = [
-    "AllQueries",
-    "BuildPredictedSequences",
-    "GetPrimers",
+    "FilterFasta",
+    "GFF",
+    "Primer",
     "Primer3Object",
+    "PrimerIDs",
+    "QueriesWorkingSet",
     "Query",
-    "Sequences",
-    "SequencesFromBlast",
-    "VerifyPrimers"
+    "SangerSeq",
+    "Sequences"
 ]
 
 import os, sys; sys.path.append(os.path.dirname(os.path.realpath(__file__)))

@@ -1,44 +1,25 @@
-from Query import Query
-
+# from Query import Query
 
 class PrimerIDs:
     def __init__(self):
         self.listOfPrimers = []
-
+        self.index = 0
         with open("DIGITfiles/compListPreviousPrimers", "r") as infile:
             for line in infile:
                 self.listOfPrimers.append(line.strip())
 
         self.numPrimers = len(self.listOfPrimers) + 1
 
-    def __setPrimerIDs__(self, queriesWorkingSet):
-        for query in queriesWorkingSet:
-            leftNameExists, rightNameExists = False, False
-            for primerName in self.listOfPrimers:
-                pts = primerName.split("_")
-                noNum = pts[0][-1] + "_" + pts[1]
-                # is left primer name in there? If so, rename left primer
-                if noNum == queriesWorkingSet[query].primerNameLeft:
-                    queriesWorkingSet[query].primerNameLeft = primerName
-                    leftNameExists = True
-                # is right primer in there? if so, rename right primer
-                if noNum == queriesWorkingSet[query].primerNameRight:
-                    queriesWorkingSet[query].primerNameRight = primerName
-                    rightNameExists = True
+    def __iter__(self):
+        return self
 
-            if not leftNameExists:
-                queriesWorkingSet[query].primerNameLeft = (
-                        "mr" + str(self.numPrimers) + queriesWorkingSet[query].primerNameLeft
-                )
-                self.listOfPrimers.append(queriesWorkingSet[query].primerNameLeft)
-                self.numPrimers += 1
-            if not rightNameExists:
-                queriesWorkingSet[query].primerNameRight = (
-                        "mr" + str(self.numPrimers) + queriesWorkingSet[query].primerNameRight
-                )
-                self.listOfPrimers.append(queriesWorkingSet[query].primerNameRight)
-                self.numPrimers += 1
-        self.__rewriteRecordFile__()
+    def __next__(self):
+        if self.index < len(self.listOfPrimers):
+            result = self.listOfPrimers[self.index]
+            self.index += 1
+            return result
+        else:
+            raise StopIteration
 
     def __rewriteRecordFile__(self):
         with open("DIGITfiles/compListPreviousPrimers", "w") as outfile:
