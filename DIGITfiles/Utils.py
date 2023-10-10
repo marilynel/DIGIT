@@ -1,22 +1,19 @@
-# from collections import ChainMap
 from difflib import SequenceMatcher
 
 import json
 import os
 import re
 import subprocess
-# import time
 
 from FilterFasta import *
 from GFF import *
-# from Primer3Object import Primer3Object
 from Primer import Primer
 from Query import Query
 from QueriesWorkingSet import QueriesWorkingSet
 
 
 ### TODO: redo this what the hell
-def thisIsDumb(query, originalData):
+def getAorB(query, originalData):
     '''
     Appears in:
         Utils.py
@@ -52,6 +49,7 @@ def allQueriesToJSON(filename, allQueries):
         ParseSangerResults.py
         SequencesFromBlast.py
     '''
+
     jsonObject = {"A188v1": {}, "B73v5": {}, "W22v2": {}}
 
     for database in allQueries:
@@ -83,37 +81,6 @@ def bestGenomesWrite(bestBitScore):
     return str(genomeList)
 
 
-# TODO: delete? no longer in use
-def buildCoordinateSetsForFilterFasta(queriesWorkingSet):
-    pass
-
-
-#    coorA, coorB, coorW = {}, {}, {}
-#   for q in queriesWorkingSet:
-#      if queriesWorkingSet[q].genome.strip() == "A188v1":
-#         coorA[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
-#                                                     queriesWorkingSet[q].wildtypeCoordinates]
-#       coorA[queriesWorkingSet[q].query + "_up"] = [queriesWorkingSet[q].chromosome,
-#                                                   queriesWorkingSet[q].upperCoordinates]
-#     coorA[queriesWorkingSet[q].query + "_lo"] = [queriesWorkingSet[q].chromosome,
-#                                                 queriesWorkingSet[q].lowerCoordinates]
-#        elif queriesWorkingSet[q].genome.strip() == "B73v5":
-#           coorB[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
-#                                                       queriesWorkingSet[q].wildtypeCoordinates]
-#         coorB[queriesWorkingSet[q].query + "_up"] = [queriesWorkingSet[q].chromosome,
-#                                                     queriesWorkingSet[q].upperCoordinates]
-#       coorB[queriesWorkingSet[q].query + "_lo"] = [queriesWorkingSet[q].chromosome,
-#                                                   queriesWorkingSet[q].lowerCoordinates]
-# elif queriesWorkingSet[q].genome.strip() == "W22v2":
-#    coorW[queriesWorkingSet[q].query + "_wt"] = [queriesWorkingSet[q].chromosome,
-#                                                queriesWorkingSet[q].wildtypeCoordinates]
-#  coorW[queriesWorkingSet[q].query + "_up"] = [queriesWorkingSet[q].chromosome,
-#                                              queriesWorkingSet[q].upperCoordinates]
-# coorW[queriesWorkingSet[q].query + "_lo"] = [queriesWorkingSet[q].chromosome,
-#                                            queriesWorkingSet[q].lowerCoordinates]
-# return coorA, coorB, coorW
-
-
 def buildFullWorkingSet(b73only):
     '''
     Collect all query data from existing working set JSON files and save to a dictionary. Return dictionary. Argument
@@ -123,6 +90,7 @@ def buildFullWorkingSet(b73only):
         ParseSangerResults.py
     '''
     completeWorkingSet = QueriesWorkingSet()
+    print("")
     for subdir, dirs, files in os.walk("DIGIToutput/FlankingSequences"):
         if subdir.find("JSON") != -1:
             for file in files:
@@ -153,6 +121,7 @@ def buildWorkingSetFromAllQueries(allQueries):
             for i in range(0, len(allQueries[gen][q])):
                 if allQueries[gen][q][i].bestHitForAllele:
                     queriesWorkingSet.__addToWorkingSet__(allQueries[gen][q][i])
+    queriesWorkingSet.__findOrderedPrimers__()
     return queriesWorkingSet
 
 
@@ -219,23 +188,6 @@ def checkCoordinates(primer, query):
     return False
 
 
-# TODO: remove if it runs ok 9/29
-def checkIfPrimerHasID():
-    '''
-    Create and return a list of primers that have already been developed.
-    TODO: do I need this in here????
-
-    '''
-    pass
-
-
-#    listPreviousPrimers = []
-#    with open("DIGITfiles/compListPreviousPrimers", "r") as prevFile:
-##        for line in prevFile:
-#           listPreviousPrimers.append(line.strip())
-#   return listPreviousPrimers
-
-
 def findBlastOutputFiles(dirname, allQueries, genomeSpec):
     '''
     This function locates the Blast output file for the user selected set of flanking sequences.
@@ -243,6 +195,17 @@ def findBlastOutputFiles(dirname, allQueries, genomeSpec):
         GetPrimerIncidenceRate.py
         ParseSangerResults.py
         SequencesFromBlast.py
+    '''
+    '''
+    # BLASTN 2.14.0+
+    # Query: R130H01
+    # Database: DIGITfiles/Genomes/W22v2/W22v2
+    # 0 hits found
+    # BLASTN 2.14.0+
+    # Query: R131C02
+    # Database: DIGITfiles/Genomes/W22v2/W22v2
+    # Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score
+    # 4 hits found
     '''
     for subdir, dirs, files in os.walk(dirname):
         for oneFile in files:
@@ -252,29 +215,6 @@ def findBlastOutputFiles(dirname, allQueries, genomeSpec):
                 genome = filename.split("_")[0]
                 allQueries[genome] = processBlastOutput(filepath, genome)
     return
-
-
-# TODO: what is this for and do I need it?
-def findNumHitsPerPrimer(allPrimers):
-    '''
-    Appears in:
-        none
-    '''
-    pass
-
-
-#    numHitsDir = {}
-#   for genome in allPrimers:
-#      if genome not in numHitsDir:
-#         numHitsDir[genome] = {}
-#    for primer in allPrimers[genome]:
-#       for hit in allPrimers[genome][primer]:
-#          parts = hit.query.split("_")
-#         primerName = parts[0] + "_" + parts[1]
-#        if primerName not in numHitsDir[genome]:
-#           numHitsDir[genome][primerName] = 0
-#      numHitsDir[genome][primerName] = hit.numHits
-# return numHitsDir
 
 
 def getBestQuery(genome, query, allQueries):
@@ -296,33 +236,17 @@ def getBestQuery(genome, query, allQueries):
                 secondBestQuery = allQueries[genome][query][i]
     perDiff = -1
     if secondBestQuery:
-        perDiff = abs((((
-                                bestQuery.bitScore - secondBestQuery.bitScore) / (
-                                    bestQuery.bitScore + secondBestQuery.bitScore)) / 2) * 100)
-
+        try:
+            perDiff = abs((((bestQuery.bitScore - secondBestQuery.bitScore) / (
+                        bestQuery.bitScore + secondBestQuery.bitScore)) / 2) * 100)
+        except:
+            perDiff = None
     for i in range(0, len(allQueries[genome][query])):
         if allQueries[genome][query][i] == bestQuery:
             allQueries[genome][query][i].bestAlleleForGenome = True
             allQueries[genome][query][i].percentDiff = perDiff
 
     return
-
-
-# TODO: remove? not in use any more
-def getDataFromJSON(filename):
-    '''
-    Parse a JSON file and return a JSON object (key:value format)
-    Appears in:
-        Utils.py
-    '''
-    pass
-
-
-#    jsonFile = open(filename)
-#   dataFromJSON = json.load(jsonFile)
-#  jsonFile.close()
-
-# return dataFromJSON
 
 
 def getNumHits(line, numHits):
@@ -336,6 +260,13 @@ def getNumHits(line, numHits):
     if blastData[2] == "hits":
         return int(blastData[1])
     return numHits
+
+
+def getQueryName(line, qName):
+    blastData = line.split(' ')
+    if blastData[1] == "Query:":
+        return blastData[2]
+    return qName
 
 
 # TODO: not yet used?
@@ -453,39 +384,6 @@ def makePrimerDict(allPrimers):
     return primerDict
 
 
-# TODO: delete this
-def makePrimerList(qWorkSet):
-    pass
-    # primerList = []
-    # for q in qWorkSet:
-    #   leftPrimerMatch, rightPrimerMatch = "", ""
-
-    #  if qWorkSet[q].sideMatchGFP3UTR == "right" and qWorkSet[q].sideMatch3DsgG == "left":
-    #     leftPrimerMatch, rightPrimerMatch = "GFP3UTR", "3DsgG"
-
-    # elif qWorkSet[q].sideMatchGFP3UTR == "left" and qWorkSet[q].sideMatch3DsgG == "right":
-    #   leftPrimerMatch, rightPrimerMatch = "3DsgG", "GFP3UTR"
-
-
-#        else:
-#           leftPrimerMatch, rightPrimerMatch = "FAIL", "FAIL"
-
-#      primerList.append(f"{qWorkSet[q].primerNameLeft},{qWorkSet[q].query},{qWorkSet[q].genome}," +
-#                       f"{qWorkSet[q].primerSequenceLeft},{leftPrimerMatch},{qWorkSet[q].primerLeftProductSize}," +
-#                      f"{qWorkSet[q].primerPairProductSize},{qWorkSet[q].tmLeft},{qWorkSet[q].primerPenaltyLeft}," +
-#                     f"{qWorkSet[q].primerPairPenalty},{qWorkSet[q].bitScore},{qWorkSet[q].numHits}," +
-#                    f"{qWorkSet[q].qStartStatus}\n")
-
-# primerList.append(f"{qWorkSet[q].primerNameRight},{qWorkSet[q].query},{qWorkSet[q].genome}," +
-#                  f"{qWorkSet[q].primerSequenceRight},{rightPrimerMatch}," +
-#                 f"{qWorkSet[q].primerRightProductSize},{qWorkSet[q].primerPairProductSize}," +
-#                f"{qWorkSet[q].tmRight},{qWorkSet[q].primerPenaltyRight},{qWorkSet[q].primerPairPenalty}," +
-#               f"{qWorkSet[q].bitScore},{qWorkSet[q].numHits},{qWorkSet[q].qStartStatus}\n")
-
-# primerList.sort()
-# return primerList
-
-
 def makeStrBestInGenome(genome, allele, bestBitScore, allQueries):
     '''
     Find the specific hit that was specified as the best for that query ID and that genome (Query.best_for_genome ==
@@ -567,10 +465,20 @@ def processBlastOutput(filename, genome):
     bYearFamilies = lookupFamilyAllele()
     genomeDB = {}
     numHits = -1
+    qName = ""
     with open(filename, "r+") as blastfile:
         for line in blastfile:
             if line[0] == '#':
+                qName = getQueryName(line, qName)
                 numHits = getNumHits(line, numHits)
+                if numHits == 0:
+                    pass
+                    newQuery = Query("", genome, numHits)
+                    newQuery.query = qName
+                    newQuery.__findBYearFamilies__(bYearFamilies)
+                    if newQuery.query not in genomeDB:
+                        genomeDB[newQuery.query] = []
+                    genomeDB[newQuery.query].append(newQuery)
             else:
                 newQuery = Query(line, genome, numHits)
                 newQuery.__setValues__()
@@ -579,36 +487,6 @@ def processBlastOutput(filename, genome):
                     genomeDB[newQuery.query] = []
                 genomeDB[newQuery.query].append(newQuery)
     return genomeDB
-
-
-# TODO: remove
-def queriesToJSON(filepath, flankseq, queriesWorkingSet):
-    '''
-    Converts dictionary to JSON object and writes it to a file.
-    Appears in:
-        GetPrimers.py
-        ParseSangerResults.py
-        SequencesFromBlast.py
-        VerifyPrimers.py
-    '''
-    pass
-
-
-#    filename = f"{filepath}/JSONfiles/WorkingSet_{flankseq}.json"
-#   jsonObject = {}
-#  for q in queriesWorkingSet:
-#     if queriesWorkingSet[q].query not in jsonObject:
-#        jsonObject[queriesWorkingSet[q].query] = []
-#   jsonObject[queriesWorkingSet[q].query] = dict(queriesWorkingSet[q])
-# newJSONobject = json.dumps(jsonObject, indent=4)
-
-#    with open(filename, "w") as outfile:
-#       outfile.write(newJSONobject)
-
-#  workingSetCSVFormat(f"{filepath}/CSVfiles/WorkingSet_{flankseq}.csv", queriesWorkingSet)
-# workingSetGFFFormat(f"{filepath}/GFFfiles/WorkingSet_{flankseq}.gff", queriesWorkingSet)
-
-# return
 
 
 def readPrimer3Output(filename, task, queriesWorkingSet):
@@ -627,6 +505,7 @@ def readPrimer3Output(filename, task, queriesWorkingSet):
                 outputDict[lineItems[0].strip()] = lineItems[1].strip()
             elif line[0] == "=":
                 queriesWorkingSet.__updateQueryWithPrimer3Data__(outputDict, task)
+                outputDict.clear()
             else:
                 print("ERROR")
 
@@ -650,7 +529,6 @@ def readSangerBlastFiles():
                             if query not in sangerDict:
                                 sangerDict[query] = SangerSeq(query, genome)
                             sangerDict[query].__addBlastLine__(genome, line)
-    print(sangerDict.keys())
 
 
 def runFilterfasta(queriesWorkingSet):
@@ -787,57 +665,6 @@ def workingQuerySelection(genome, allele, allQueries):
             return
 
 
-# TODO: not in use
-def workingSetCSVFormat(filename, qWorkSet):
-    '''
-    Print queriesWorkingSet in csv format.
-    Appears in:
-        Utils.py
-    '''
-    pass
-    # csvName = filename.split(".")[0] + ".csv"
-    # with open(csvName, "w") as csvFile:
-    #    csvFile.write(f"Query,Genome,BYearFamily,Chromosome,PercentIdentity,AlignmentLength,Mismatches,GapOpens,qStar" +
-    #                 f"t,qEnd,sStart,sEnd,eValue,BitScore,NumHitsForGenome,PercentDifferenceToNextHit,Strand,qStartS" +
-    #                f"tatus,PrimerNameLeft,PrimerSequenceLeft,PrimerLeftProductSize,PrimerPenaltyLeft,PrimerNameRig" +
-    #               f"ht,PrimerSequenceRight,PrimerRightProductSize,PrimerPenaltyRight,PrimerPairProductSize,Primer" +
-    #              f"PairPenalty\n")
-
-    # for q in qWorkSet:
-    #   csvFile.write(f"{qWorkSet[q].query},{qWorkSet[q].genome},{qWorkSet[q].bYearFamilies}," +
-    #                f"{qWorkSet[q].chromosome},{qWorkSet[q].perIdentity},{qWorkSet[q].alignmentLength}," +
-    #               f"{qWorkSet[q].mismatches},{qWorkSet[q].gapOpens},{qWorkSet[q].qStart},{qWorkSet[q].qEnd}," +
-    #              f"{qWorkSet[q].sStart},{qWorkSet[q].sEnd},{qWorkSet[q].eValue},{qWorkSet[q].bitScore}," +
-    #             f"{qWorkSet[q].numHits},{qWorkSet[q].percentDiff},{qWorkSet[q].strand}," +
-    #            f"{qWorkSet[q].qStartStatus},{qWorkSet[q].primerNameLeft},{qWorkSet[q].primerSequenceLeft}," +
-    #           f"{qWorkSet[q].primerLeftProductSize},{qWorkSet[q].primerPenaltyLeft}," +
-    #          f"{qWorkSet[q].primerNameRight},{qWorkSet[q].primerSequenceRight}," +
-    #         f"{qWorkSet[q].primerRightProductSize},{qWorkSet[q].primerPenaltyRight}," +
-    #        f"{qWorkSet[q].primerPairProductSize},{qWorkSet[q].primerPairPenalty},\n")
-
-
-# TODO: not in use
-def workingSetGFFFormat(filename, queriesWorkingSet):
-    pass
-
-
-#    gffName = filename.split(".")[0] + ".gff"
-#   newGffFile = GffFile("")
-#  newGffFile.__formatFromQueriesWorkingSet__(queriesWorkingSet)
-# newGffFile.__writeToGffFile__(gffName)
-
-# TODO: this is not used, do I need it at all?
-def writePrimerNumHitsToCSV(dirname, flankseq, numHitsDir):
-    '''
-    Appears in:
-    '''
-    with open(dirname + flankseq + "_PrimerOccuranceInGenome.csv", "w") as csvfile:
-        csvfile.write(f"PrimerName,NumHits,Genome,\n")
-        for genome in numHitsDir:
-            for primer in numHitsDir[genome]:
-                csvfile.write(f"{primer},{numHitsDir[genome][primer]},{genome},\n")
-
-
 def writeToBestQueriesFile(listQueries, flankseq, allQueries, filename):
     '''
     Write to file the best bit scores per genome per query, for manual review if needed.
@@ -878,10 +705,8 @@ def writePrimerIncidenceDataToFile(primerDict, flankseq):
                         f"{primerDict[genome][query][i].genome}," +
                         f"{primerDict[genome][query][i].primerFoundNearFlankSeq}\n")
 
-                ### TODO: rewrite this it looks ridiculous
 
-
-def writeSangerComparisonFile(filename, dataList, originalData, sangerData):
+def writeSangerComparisonFile(filename, dataList, ogData, sanger):
     '''
     Appears in:
         Utils
@@ -891,20 +716,21 @@ def writeSangerComparisonFile(filename, dataList, originalData, sangerData):
             f"Query,RefGenomeSanger,ChromosomeSanger,RefGenomeOriginal,ChromosomeOriginal,SeqStartSanger,SeqEndSa" +
             f"nger,SeqStartOriginal,SeqEndOriginal,EValueSanger,EValueOriginal,BitScoreSanger,BitScoreOriginal,Nu" +
             f"mHitsSanger,NumHitsOriginal,StrandSanger,StrandOriginal,QStartStatusSanger,QStartStatusOriginal\n")
-        for query in dataList:
-            queryOG = query.split("_")[0]
+        for q in dataList:
+            qOG = q.split("_")[0]
             f.write(
-                f"{sangerData.workingSet[query].query},{sangerData.workingSet[query].genome},{sangerData.workingSet[query].chromosome}," +
-                f"{originalData.workingSet[queryOG].genome},{originalData.workingSet[queryOG].chromosome},{sangerData.workingSet[query].sStart}," +
-                f"{sangerData.workingSet[query].sEnd},{originalData.workingSet[queryOG].sStart},{originalData.workingSet[queryOG].sEnd}," +
-                f"{sangerData.workingSet[query].eValue},{originalData.workingSet[queryOG].eValue},{sangerData.workingSet[query].bitScore}," +
-                f"{originalData.workingSet[queryOG].bitScore},{sangerData.workingSet[query].numHits},{originalData.workingSet[queryOG].numHits}," +
-                f"{sangerData.workingSet[query].strand},{originalData.workingSet[queryOG].strand},{sangerData.workingSet[query].qStartStatus}," +
-                f"{originalData.workingSet[queryOG].qStartStatus}\n")
+                f"{sanger.workingSet[q].query},{sanger.workingSet[q].genome},{sanger.workingSet[q].chromosome}," +
+                f"{ogData.workingSet[qOG].genome},{ogData.workingSet[qOG].chromosome}," +
+                f"{sanger.workingSet[q].sStart},{sanger.workingSet[q].sEnd},{ogData.workingSet[qOG].sStart}," +
+                f"{ogData.workingSet[qOG].sEnd},{sanger.workingSet[q].eValue},{ogData.workingSet[qOG].eValue}," +
+                f"{sanger.workingSet[q].bitScore},{ogData.workingSet[qOG].bitScore}," +
+                f"{sanger.workingSet[q].numHits},{ogData.workingSet[qOG].numHits},{sanger.workingSet[q].strand}," +
+                f"{ogData.workingSet[qOG].strand},{sanger.workingSet[q].qStartStatus}," +
+                f"{ogData.workingSet[qOG].qStartStatus}\n")
 
 
 ### TODO: should probably redo this as well
-def writeSangerComparisonFileTwoSeqs(filename, dataList, originalData, sangerData):
+def writeSangerComparisonFileTwoSeqs(filename, dataList, ogData, sanger):
     '''
     Appears in:
         ParseSangerResults.py
@@ -917,20 +743,20 @@ def writeSangerComparisonFileTwoSeqs(filename, dataList, originalData, sangerDat
             f"reOriginalB,NumHitsSanger,NumHitsOriginalA,NumHitsOriginalB,StrandSanger,StrandOriginalA,StrandOrig" +
             f"inalB,QStartStatusSanger,QStartStatusOriginalA,QStartStatusOriginalB\n")
 
-        for query in dataList:
-            queryOGA = query.split("_")[0] + "a"
-            queryOGB = query.split("_")[0] + "b"
-            aData = thisIsDumb(queryOGA, originalData)
-            bData = thisIsDumb(queryOGB, originalData)
+        for q in dataList:
+            qOGa = q.split("_")[0] + "a"
+            qOGb = q.split("_")[0] + "b"
+            aData = getAorB(qOGa, ogData)
+            bData = getAorB(qOGb, ogData)
             f.write(
-                f"{sangerData.workingSet[query].query},{sangerData.workingSet[query].genome},{sangerData.workingSet[query].chromosome}," +
+                f"{sanger.workingSet[q].query},{sanger.workingSet[q].genome},{sanger.workingSet[q].chromosome}," +
                 f"{aData['genome']},{aData['chromosome']},{bData['genome']},{bData['chromosome']}," +
-                f"{sangerData.workingSet[query].sStart},{sangerData.workingSet[query].sEnd},{aData['sStart']},{aData['sEnd']}," +
-                f"{bData['sStart']},{bData['sEnd']},{sangerData.workingSet[query].eValue},{aData['eValue']}," +
-                f"{bData['eValue']},{sangerData.workingSet[query].bitScore},{aData['bitScore']},{bData['bitScore']}," +
-                f"{sangerData.workingSet[query].numHits},{aData['numHits']},{bData['numHits']},{sangerData.workingSet[query].strand}," +
-                f"{aData['strand']},{bData['strand']},{sangerData.workingSet[query].qStartStatus},{aData['qStartStatus']}," +
-                f"{bData['qStartStatus']}\n")
+                f"{sanger.workingSet[q].sStart},{sanger.workingSet[q].sEnd},{aData['sStart']},{aData['sEnd']}," +
+                f"{bData['sStart']},{bData['sEnd']},{sanger.workingSet[q].eValue},{aData['eValue']}," +
+                f"{bData['eValue']},{sanger.workingSet[q].bitScore},{aData['bitScore']},{bData['bitScore']}," +
+                f"{sanger.workingSet[q].numHits},{aData['numHits']},{bData['numHits']}," +
+                f"{sanger.workingSet[q].strand},{aData['strand']},{bData['strand']}," +
+                f"{sanger.workingSet[q].qStartStatus},{aData['qStartStatus']},{bData['qStartStatus']}\n")
 
 
 def writeToFile(dataList, ordernum, genomeDetail, seqType, originalData, bestSangers):

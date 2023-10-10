@@ -10,10 +10,10 @@ DsGFP3_UTR  -> matching primer
 '''
 
 import sys
-# import os
 
 from Utils import *
 from SangerSeq import *
+
 
 sangerQueriesAll = {
     "A188v1": {},
@@ -39,8 +39,20 @@ def main():
 
     allQueriesToJSON(f"{outSangerDir}/JSONfiles/AllBlastData_{ordernum}.json", sangerQueriesAll)
 
-    matchingSeqs, nonMatchingSeqs = splitSangerQueriesAllIntoMatchingAndNonMatchingSets(
-        sangerQueriesAll)
+    ### NEW
+
+    for genome in sangerQueriesAll:
+        for allele in sangerQueriesAll[genome]:
+            for i in range(len(sangerQueriesAll[genome][allele])):
+                if sangerQueriesAll[genome][allele][i].numHits == 0:
+                    print(f"{allele} does not appear in {genome}")
+
+
+
+    ### END NEW
+
+
+    matchingSeqs, nonMatchingSeqs = splitSangerQueriesAllIntoMatchingAndNonMatchingSets(sangerQueriesAll)
 
     # Get best queries to compare
     sangerListMatching = setBestForGenome(matchingSeqs)
@@ -59,14 +71,13 @@ def main():
     workingSetSangerQueriesNonMatching = buildWorkingSetFromAllQueries(nonMatchingSeqs)
 
     # TODO: how to set this so it only happens if there is stuff in the object? don't want to make a file with no data
-    if workingSetSangerQueriesMatching:
+    if workingSetSangerQueriesMatching.workingSet:
         workingSetSangerQueriesMatching.__printToJson__(f"{outSangerDir}", ordernum)
-    if workingSetSangerQueriesNonMatching:
-        workingSetSangerQueriesNonMatching.__printToJson__(f"{outSangerDir}", ordernum)
+    if workingSetSangerQueriesNonMatching.workingSet:
+        workingSetSangerQueriesNonMatching.__printToJson__(f"{outSangerDir}", f"{ordernum}_NonMatching")
 
     # Pull from Working Sets of Queries
-    originalData = buildFullWorkingSet(True)
-
+    originalData = buildFullWorkingSet(False)
     # Sort into 6 categories:
     #   dataMatching                    sequence and genome match
     #   badDataMatching                 sequence matches, genome does not
@@ -74,31 +85,26 @@ def main():
     #   dataNonMatching                 sequences doesn't match, but genome matches
     #   badDataNonMatching              neither sequence nor genome matche
     #   queryDataInTwoSeqsNonMatching   sequence doesn't match, query is in "two seqs" subset
-
     dataMatching, badDataMatching, queryDataInTwoSeqsMatching = \
         sortSangerQueries(originalData, workingSetSangerQueriesMatching)
     dataNonMatching, badDataNonMatching, queryDataInTwoSeqsNonMatching = \
         sortSangerQueries(originalData, workingSetSangerQueriesNonMatching)
 
-    writeToFile(dataMatching, ordernum, "SameGenome", "MatchingSeq", originalData,
-                workingSetSangerQueriesMatching)
-    writeToFile(badDataMatching, ordernum, "DiffGenome", "MatchingSeq", originalData,
-                workingSetSangerQueriesMatching)
+    writeToFile(dataMatching, ordernum, "SameGenome", "MatchingSeq", originalData, workingSetSangerQueriesMatching)
+    writeToFile(badDataMatching, ordernum, "DiffGenome", "MatchingSeq", originalData, workingSetSangerQueriesMatching)
     writeToFile(dataNonMatching, ordernum, "SameGenome", "NonMatchingSeq", originalData,
                 workingSetSangerQueriesNonMatching)
     writeToFile(badDataNonMatching, ordernum, "DiffGenome", "NonMatchingSeq", originalData,
                 workingSetSangerQueriesNonMatching)
 
     if len(queryDataInTwoSeqsMatching) > 0:
-        writeSangerComparisonFileTwoSeqs(
-            f"{outSangerDir}/CSVfiles/TwoSeqsSet_{ordernum}_MatchingSeq.csv",
-            queryDataInTwoSeqsMatching, originalData, workingSetSangerQueriesMatching)
+        writeSangerComparisonFileTwoSeqs(f"{outSangerDir}/CSVfiles/TwoSeqsSet_{ordernum}_MatchingSeq.csv",
+                                         queryDataInTwoSeqsMatching, originalData, workingSetSangerQueriesMatching)
 
-    if len(queryDataInTwoSeqsNonMatching) > 0:
-        writeSangerComparisonFileTwoSeqs(
-            f"{outSangerDir}/CSVfiles/TwoSeqsSet_{ordernum}_NonMatching.csv",
-            queryDataInTwoSeqsNonMatching, originalData,
-            workingSetSangerQueriesNonMatching)
+    if len(queryDataInTwoSeqsNonMatching) > 0 :
+        writeSangerComparisonFileTwoSeqs(f"{outSangerDir}/CSVfiles/TwoSeqsSet_{ordernum}_NonMatching.csv",
+                                         queryDataInTwoSeqsNonMatching, originalData,
+                                         workingSetSangerQueriesNonMatching)
 
 
 if __name__ == '__main__':
