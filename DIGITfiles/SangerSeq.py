@@ -3,6 +3,8 @@ import re
 from Query import *
 
 
+# Not currently in use
+
 class BlastLine:
     def __init__(self, line):
         # # Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score

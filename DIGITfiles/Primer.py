@@ -2,6 +2,9 @@
 from Query import *
 
 
+# Not currently in use
+
+
 class Primer:
     def __init__(self, queryObj):
         self.primerID = queryObj.query

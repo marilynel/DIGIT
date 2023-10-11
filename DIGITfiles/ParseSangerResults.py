@@ -15,14 +15,12 @@ from Utils import *
 from SangerSeq import *
 
 
-sangerQueriesAll = {
-    "A188v1": {},
-    "B73v5": {},
-    "W22v2": {}
-}
-
-
 def main():
+    sangerQueriesAll = {
+        "A188v1": {},
+        "B73v5": {},
+        "W22v2": {}
+    }
     ordernum = sys.argv[1]
     necessaryDirs = [
         f"DIGIToutput/SangerSequences",
@@ -33,28 +31,17 @@ def main():
     ]
 
     makeDirectories(necessaryDirs)
+
+    # Find output of blasting sanger sequences and store in sangerQueriesAll; note if any have 0 hits in genome
     outSangerDir = f"DIGIToutput/SangerSequences/{ordernum}"
-
     findBlastOutputFiles(f"{outSangerDir}/BlastOutput", sangerQueriesAll, ordernum)
-
     allQueriesToJSON(f"{outSangerDir}/JSONfiles/AllBlastData_{ordernum}.json", sangerQueriesAll)
+    noteNoHitSangers(sangerQueriesAll)
 
-    ### NEW
-
-    for genome in sangerQueriesAll:
-        for allele in sangerQueriesAll[genome]:
-            for i in range(len(sangerQueriesAll[genome][allele])):
-                if sangerQueriesAll[genome][allele][i].numHits == 0:
-                    print(f"{allele} does not appear in {genome}")
-
-
-
-    ### END NEW
-
-
+    # Split sangerQueriesAll into two dicts with the same internal structure as sangerQueriesAll
     matchingSeqs, nonMatchingSeqs = splitSangerQueriesAllIntoMatchingAndNonMatchingSets(sangerQueriesAll)
 
-    # Get best queries to compare
+    # Compare and find the "best" hits for each sanger sequence query; save results to files
     sangerListMatching = setBestForGenome(matchingSeqs)
     sangerListNonMatching = setBestForGenome(nonMatchingSeqs)
 
@@ -66,11 +53,10 @@ def main():
         writeToBestQueriesFile(sangerListNonMatching, ordernum, sangerQueriesAll,
                                f"{outSangerDir}/CSVfiles/BestQueriesByGenome_{ordernum}_ImperfectSeq.csv")
 
-    # Make working sets of sanger queries
+    # Make working sets of sanger queries and save to files
     workingSetSangerQueriesMatching = buildWorkingSetFromAllQueries(matchingSeqs)
     workingSetSangerQueriesNonMatching = buildWorkingSetFromAllQueries(nonMatchingSeqs)
 
-    # TODO: how to set this so it only happens if there is stuff in the object? don't want to make a file with no data
     if workingSetSangerQueriesMatching.workingSet:
         workingSetSangerQueriesMatching.__printToJson__(f"{outSangerDir}", ordernum)
     if workingSetSangerQueriesNonMatching.workingSet:
@@ -85,6 +71,8 @@ def main():
     #   dataNonMatching                 sequences doesn't match, but genome matches
     #   badDataNonMatching              neither sequence nor genome matche
     #   queryDataInTwoSeqsNonMatching   sequence doesn't match, query is in "two seqs" subset
+
+    # sortSangerQueries() returns 3 lists of Query objects
     dataMatching, badDataMatching, queryDataInTwoSeqsMatching = \
         sortSangerQueries(originalData, workingSetSangerQueriesMatching)
     dataNonMatching, badDataNonMatching, queryDataInTwoSeqsNonMatching = \

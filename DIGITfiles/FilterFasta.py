@@ -85,7 +85,9 @@ def filterFasta(filename, coordinates):
         chr = coordinates[c][0]
         c1 = coordinates[c][1][0] - ffobj.dictMinCoordinates[chr] - 1
         c2 = coordinates[c][1][1] - ffobj.dictMinCoordinates[chr]
-        seq = ffobj.genomeStruct[chr][c1:c2]
+        seq = ""
+        if chr in ffobj.genomeStruct:
+            seq = ffobj.genomeStruct[chr][c1:c2]
         sequenceData[c] = seq
 
     return sequenceData

@@ -99,6 +99,12 @@ class Query:
         self.bestHitForAllele = False  # true if this instance in this genome is the best for all
         # versions of the allele
 
+        # Have the primers been ordered or sanger'd yet?
+        self.primerLeftOrdered = False
+        self.primerLeftSangered = False
+        self.primerRightOrdered = False
+        self.primerRightSangered = False
+
         self.bYearFamilies = None
 
     def __findBYearFamilies__(self, familyDict):
@@ -219,19 +225,30 @@ class Query:
         self.primerPenaltyLeft = jsonObject["primerPenaltyLeft"]
         self.primerPenaltyRight = jsonObject["primerPenaltyRight"]
         self.primerPairPenalty = jsonObject["primerPairPenalty"]
+        self.primerLeftOrdered = jsonObject["primerLeftOrdered"]
+        self.primerLeftSangered = jsonObject["primerLeftSangered"]
+        self.primerRightOrdered = jsonObject["primerRightOrdered"]
+        self.primerRightSangered = jsonObject["primerRightSangered"]
         self.bYearFamilies = jsonObject["bYearFamilies"]
         self.bestAlleleForGenome = jsonObject["bestAlleleForGenome"]
         self.bestHitForAllele = jsonObject["bestHitForAllele"]
 
     def __workingSetCsvLine__(self):
-        return f"{self.query},{self.genome},{self.bYearFamilies},{self.chromosome}," + \
-               f"{self.perIdentity},{self.alignmentLength},{self.mismatches},{self.gapOpens}," + \
-               f"{self.qStart},{self.qEnd},{self.sStart},{self.sEnd},{self.eValue}," + \
-               f"{self.bitScore},{self.numHits},{self.percentDiff},{self.strand}," + \
-               f"{self.qStartStatus},{self.primerNameLeft},{self.primerSequenceLeft}," + \
-               f"{self.primerLeftProductSize},{self.primerPenaltyLeft},{self.primerNameRight}," + \
-               f"{self.primerSequenceRight},{self.primerRightProductSize}," + \
-               f"{self.primerPenaltyRight},{self.primerPairProductSize},{self.primerPairPenalty},\n"
+        return f"{self.query},{self.genome},{self.bYearFamilies},{self.chromosome}," \
+               f"{self.perIdentity}," + \
+               f"{self.alignmentLength},{self.mismatches},{self.gapOpens},{self.q
+        Start},{self.qEnd},{self.sStart}," + \
+               f"{self.sEnd},{self.eValue},{self.bitScore},{self.numHits},{self.percentDiff},
+                 {self.strand}," + \
+               f"{self.qStartStatus},{self.primerNameLeft},{self.primerSequenceLeft},
+                 {self.primerLeftProductSize}," + \
+               f"{self.primerPenaltyLeft},{self.primerLeftOrdered},{self.primerLeftSangered},
+                 {self.primerNameRight}," + \
+               f"{self.primerSequenceRight},{self.primerRightProductSize},
+                 {self.primerPenaltyRight}," + \
+               f"{self.primerRightOrdered},{self.primerRightSangered},
+                 {self.primerPairProductSize}," + \
+               f"{self.primerPairPenalty},\n"
 
     def __validate__(self, selfObj, otherObj):
         if selfObj == otherObj:
@@ -284,16 +301,18 @@ class Query:
     def __leftPrimerDataLine__(self):
         leftPrimerMatch, rightPrimerMatch = self.__primerSides__()
         return f"{self.primerNameLeft},{self.query},{self.genome},{self.primerSequenceLeft}," \
-               f"{leftPrimerMatch},{self.primerLeftProductSize},{self.primerPairProductSize}," + \
-               f"{self.tmLeft},{self.primerPenaltyLeft},{self.primerPairPenalty}," + \
-               f"{self.bitScore},{self.numHits},{self.qStartStatus}\n"
+               f"{leftPrimerMatch}," + \
+               f"{self.primerLeftProductSize},{self.primerPairProductSize},{self.t
+        mLeft},{self.primerPenaltyLeft}," + \
+               f"{self.primerPairPenalty},{self.bitScore},{self.numHits},{self.qStartStatus}\n"
 
     def __rightPrimerDataLine__(self):
         leftPrimerMatch, rightPrimerMatch = self.__primerSides__()
         return f"{self.primerNameRight},{self.query},{self.genome},{self.primerSequenceRight}," \
-               f"{rightPrimerMatch},{self.primerRightProductSize},{self.primerPairProductSize}," + \
-               f"{self.tmRight},{self.primerPenaltyRight},{self.primerPairPenalty}," + \
-               f"{self.bitScore},{self.numHits},{self.qStartStatus}\n"
+               f"{rightPrimerMatch}," + \
+               f"{self.primerRightProductSize},{self.primerPairProductSize},{self.tm
+        Right},{self.primerPenaltyRight}," + \
+               f"{self.primerPairPenalty},{self.bitScore},{self.numHits},{self.qStartStatus}\n"
 
     def __primerSides__(self):
         leftPrimerMatch, rightPrimerMatch = "", ""

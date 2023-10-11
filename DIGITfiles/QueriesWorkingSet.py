@@ -6,15 +6,13 @@ from Query import *
 from PrimerIDs import *
 from Primer3Object import *
 
-# TODO: set up logging
-log = "log.log"
-
 
 class QueriesWorkingSet:
     def __init__(self):
         self.workingSet = {}
 
     def __addToWorkingSet__(self, queryObj):
+        # for adding a single Query object to workingSet as value (key is string Query.query)
         if queryObj.query not in self.workingSet:
             self.workingSet[queryObj.query] = None
             self.workingSet[queryObj.query] = queryObj
@@ -27,6 +25,7 @@ class QueriesWorkingSet:
         return None
 
     def __createQueryStructFromJson__(self, filename):
+        # Build workingSet from JSON file
         jsonFile = open(filename)
         dataFromJSON = json.load(jsonFile)
         jsonFile.close()
@@ -34,20 +33,23 @@ class QueriesWorkingSet:
             if allele not in self.workingSet:
                 self.workingSet[allele] = Query(None, None, None)
                 self.workingSet[allele].__QueryFromJSON__(dataFromJSON[allele])
+        self.__findOrderedPrimers__()
 
     def __updateQueryWithPrimer3Data__(self, outputDict, task):
-        allele = outputDict["SEQUENCE_ID"].split("_")[1]
+        allele = outputDict["SEQUENCE_ID"].split("_")[-1]
         newP3Obj = Primer3Object(task)
         newP3Obj.__initValsFromP3Output__(outputDict)
         self.workingSet[allele].__updateQueryWithP3Output__(newP3Obj)
 
     def __lookupQuery__(self, query):
+        # Specifically access Query object for Lookup task
         if query in self.workingSet:
             self.workingSet[query].__lookupPrint__()
         else:
             print(f"{query} is not in working set")
 
     def __printToJson__(self, filepath, flankseq):
+        # Write workingSet to a JSON file
         filename = f"{filepath}/JSONfiles/WorkingSet_{flankseq}.json"
         jsonObject = {}
         for q in self.workingSet:
@@ -58,7 +60,7 @@ class QueriesWorkingSet:
         with open(filename, "w") as outfile:
             outfile.write(newJSONobject)
         self.__printToCsv__(f"{filepath}/CSVfiles/WorkingSet_{flankseq}.csv")
-        self.__printToGff__(f"{filepath}/GFFfiles/WorkingSet_{flankseq}.csv")
+        self.__printToGff__(f"{filepath}/GFFfiles/WorkingSet_{flankseq}.gff")
 
     def __printToCsv__(self, filename):
         csvName = filename.split(".")[0] + ".csv"
@@ -70,9 +72,11 @@ class QueriesWorkingSet:
                 f"PercentDifferenceToNextHit,Strand" +
                 f",qStartStatus,PrimerNameLeft,PrimerSequenceLeft,PrimerLeftProductSize,"
                 f"PrimerPenaltyLeft,P" +
-                f"rimerNameRight,PrimerSequenceRight,PrimerRightProductSize,PrimerPenaltyRight,"
-                f"PrimerPairPr" +
-                f"oductSize,PrimerPairPenalty\n")
+                f"rimerLeftOrdered,PrimerLeftSangered,PrimerNameRight,PrimerSequenceRight,"
+                f"PrimerRightProduc" +
+                f"tSize,PrimerPenaltyRight,PrimerRightOrdered,PrimerRightSangered,"
+                f"PrimerPairProductSize,Pri" +
+                f"merPairPenalty\n")
 
             for q in self.workingSet:
                 csvFile.write(self.workingSet[q].__workingSetCsvLine__())
@@ -192,7 +196,7 @@ class QueriesWorkingSet:
         for q in self.workingSet:
             if self.workingSet[q].primerSequenceRight == "FAIL" or self.workingSet[
                 q].primerSequenceLeft == "FAIL":
-                queriesWithBadPrimers[q].__addToWorkingSet__(self.workingSet[q])
+                queriesWithBadPrimers.__addToWorkingSet__(self.workingSet[q])
         return queriesWithBadPrimers
 
     def __makePrimerDataFile__(self, filename):
@@ -212,6 +216,27 @@ class QueriesWorkingSet:
             for q in listOfPrimerStrings:
                 primerFile.write(q)
 
+    def __findOrderedPrimers__(self):
+        orderedPrimersDict = {}
+        with open("PutOrderedPrimersHere/OrderedPrimers", "r") as opfile:
+            for line in opfile:
+                primerName, primerSeq = line.split(",")
+                orderedPrimersDict[primerName.strip()] = primerSeq.strip()
 
+        for q in self.workingSet:
+            if self.workingSet[q].primerNameLeft in orderedPrimersDict:
+                self.workingSet[q].primerLeftOrdered = True
+                if self.workingSet[q].primerSequenceLeft != orderedPrimersDict[
+                    self.workingSet[q].primerNameLeft]:
+                    print(
+                        f"Error: Predicted left primer and ordered left primer do not match for "
+                        f"{q}")
+
+            if self.workingSet[q].primerNameRight in orderedPrimersDict:
+                self.workingSet[q].primerRightOrdered = True
+                if self.workingSet[q].primerSequenceRight != orderedPrimersDict[
+                    self.workingSet[q].primerNameRight]:
+                    print(
+                        f"Error: Predicted right primer and ordered right primer do not match for {q}")
 
 

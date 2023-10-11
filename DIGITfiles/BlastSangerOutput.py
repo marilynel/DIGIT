@@ -10,13 +10,10 @@ Written by: Marilyn Leary 2023
 
     Output:
     Three Blast output files with path and naming convention:
-        DIGITfiles/SangerSequences/<orderNumber>/BlastOutputSangerSeqs/<referenceGenome_vs_orderNumber>.tab
+        DIGIToutput/SangerSequences/<orderNumber>/BlastOutput/<referenceGenome_vs_orderNumber>.tab
 '''
 
-#import os
 import sys
-#import re
-#from difflib import SequenceMatcher
 
 from Utils import *
 

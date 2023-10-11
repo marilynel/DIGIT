@@ -25,12 +25,7 @@ def okGo(dirname, fileSubstrings):
                 if dir.find(fileSubstring) != -1:
                     ok = True
                     break
-    # else:
-    #    print(f"{dirname} does not exist")
-    # print(f"\nYou do not have the correct files available in {dirname}/ to complete this task.
-    # Check to make " +
-    #      f"sure you have completed the previous steps in order to proceed. See README for more details.\n")
-    #    logging.info(f"\tNecessary files unavailable in {dirname}\n")
+
     else:
         print("Files do not exist to support this action. Please try something else.")
         # main()
