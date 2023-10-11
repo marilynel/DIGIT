@@ -1,3 +1,20 @@
+'''
+GetPrimerIncidenceRate.py creates a csv file out of number of times each primer occurs in each of
+the genomes, A188,
+B73, and W22.
+
+Written by: Marilyn Leary 2023
+
+    Input:
+    flankseq (sys.argv[1])  String representing the Flanking Sequence Set of interest. Should
+    match with a subfolder of
+                            DIGIToutput/FlankingSequences
+
+    Output:
+    Three Blast output files with path and naming convention:
+        DIGIToutput/FlankingSequences/<flankseq>/PrimerData/<flankseq>_PrimerIncidenceRate.csv
+'''
+
 import sys
 
 from Utils import *

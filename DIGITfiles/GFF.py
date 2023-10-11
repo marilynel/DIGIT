@@ -1,23 +1,18 @@
+'''
+GFF.py contains two classes: GffLine for parsing individual lines from Blast or individual Query objects and
+stringifying data in GFF format, and GffFile for reading JSON or tab input files and creating GFF outputfiles.
+
+These classes follow gff-version 3.1.26 format and interface specifically with the JSON files from DIGIT as well as
+Blast output in tab format.
+
+GFF documentation:
+http://useast.ensembl.org/info/website/upload/gff3.html
+
+Blast documentation (tab):
+https://www.metagenomics.wiki/tools/blast/blastn-output-format-6
+'''
+
 from Query import *
-
-# from Utils import *
-
-'''
-##sequid	source	type	start	end	score	strand	phase	attributes
-the key bits to get from your DIGIT output are:
-sequid = chromosome
-start & end = the s.start & s.end are the coordinates on the chromosome, with the lowest value associated with the start coordinate, and the highest value associated with the end coordinate. this means that you have to take the +1 or -1 strand into account when assigning these values (reversing the s.start & s.end if it's -1)
-score = BLAST evalue
-strand = + or -, corresponding to +1 and -1 in the output
-attributes = user-defined additional info. At this point, I've only tentatively assigned the following two possibilities, depending on whether the BLAST hit is from the original data (1st), or validated Sanger-sequencing (2nd)
-"Name=tdsgR106E07_3'Flanking_Sequence_Best_BLAST_hit"
-"Name=SangerValid_tdsgR76E07_3'Flanking_Sequence_Best_BLAST_hit"
-the following columns are the same for all:
-source = DIGIT
-type = nucleotide_match
-phase = .
-
-'''
 
 
 class GffLine:
@@ -101,18 +96,17 @@ class GffFile:
             self.listGffLines.append(gffLine)
 
     def __readFromJson__(self):
-        # with open(self.filename, "r") as jfile
-        queriesWorkingSet = {}
-        createQueryStruct(self.filename, queriesWorkingSet)
-        self.__formatFromQueriesWorkingSet__(queriesWorkingSet)
+        # This function needs to be updated
+        pass
+        # queriesWorkingSet = {}
+        # createQueryStruct(self.filename, queriesWorkingSet)
+        # self.__formatFromQueriesWorkingSet__(queriesWorkingSet)
 
     def __writeToGffFile__(self, filename):
         with open(filename, "w") as gfile:
             gfile.write(f"##gff-version 3.1.26\n")
-            # i = 0
             for gff in self.listGffLines:
                 gfile.write(gff.__stringGffLine__())
-                # i += 1
 
 
 

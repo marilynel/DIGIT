@@ -411,6 +411,14 @@ def matchChrAndGenome(primer, query):
     return True
 
 
+def noteNoHitSangers(sangerQueriesAll):
+    for genome in sangerQueriesAll:
+        for allele in sangerQueriesAll[genome]:
+            for i in range(len(sangerQueriesAll[genome][allele])):
+                if sangerQueriesAll[genome][allele][i].numHits == 0:
+                    print(f"{allele} does not appear in {genome}")
+
+
 def pickGenome(allele, bestBitScore, allQueries):
     '''
     Selects best genome.

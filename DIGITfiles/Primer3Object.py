@@ -172,7 +172,9 @@ class Primer3Object:
         Compose begining of input string for Validation P3 input.
         '''
         self.inputStr = (
-                f"SEQUENCE_ID={self.primerNameLeft}\n" +
+            # f"SEQUENCE_ID={self.primerNameLeft}\n" +
+            # TODO: changed here
+                f"SEQUENCE_ID={self.query}\n" +
                 f"SEQUENCE_TEMPLATE={self.wildtypeSequence}\n" +
                 f"SEQUENCE_PRIMER={self.primerSequenceLeft}\n" +
                 f"SEQUENCE_PRIMER_REVCOMP={self.primerSequenceRight}\n" +
@@ -183,6 +185,7 @@ class Primer3Object:
                 f"PRIMER_PRODUCT_SIZE_RANGE={self.productSizeStrLeft}\n" +
                 f"{self.sizeStr}" +
                 f"{self.lastStr}"
+
         )
 
     def __initValsFromP3Output__(self, outData):
