@@ -13,14 +13,11 @@ import sys
 
 from Utils import *
 from SangerSeq import *
+from BlastOutput import *
 
 
 def main():
-    sangerQueriesAll = {
-        "A188v1": {},
-        "B73v5": {},
-        "W22v2": {}
-    }
+
     ordernum = sys.argv[1]
     necessaryDirs = [
         f"DIGIToutput/SangerSequences",
@@ -32,38 +29,62 @@ def main():
 
     makeDirectories(necessaryDirs)
 
-    # Find output of blasting sanger sequences and store in sangerQueriesAll; note if any have 0 hits in genome
-    outSangerDir = f"DIGIToutput/SangerSequences/{ordernum}"
-    findBlastOutputFiles(f"{outSangerDir}/BlastOutput", sangerQueriesAll, ordernum)
-    allQueriesToJSON(f"{outSangerDir}/JSONfiles/AllBlastData_{ordernum}.json", sangerQueriesAll)
-    noteNoHitSangers(sangerQueriesAll)
+    # Find output of blasting sanger sequences and store in allSangers;
+    # # TODO: note if any have 0 hits in genome
+    allSangers = BlastOutput(ordernum, "SangerSequences")
+    allSangers.__parseBlastOutputFiles__("")
+    allSangers.__findBestForGenome__()
+    allSangers.__pickGenome__()
+    allSangers.__allBlastOutputDataToJson__()
 
-    # Split sangerQueriesAll into two dicts with the same internal structure as sangerQueriesAll
-    matchingSeqs, nonMatchingSeqs = splitSangerQueriesAllIntoMatchingAndNonMatchingSets(sangerQueriesAll)
+
+    ### read in sangerjson
+    sangerSeqs = SangerSeqSet(ordernum)
+    sangerSeqs.__readFromJson__()
+
+    sangerSeqs.__addQueriesToSangerObjs__(allSangers)
+    sangerSeqs.__setBestQueryToSanger__()
+
+    #noteNoHitSangers(allSangers)
+
+
+### HERE
+    # Split allSangers into two dicts with the same internal structure as allSangers
+    #matchingSeqs, nonMatchingSeqs = splitallSangersIntoMatchingAndNonMatchingSets(allSangers)
 
     # Compare and find the "best" hits for each sanger sequence query; save results to files
-    sangerListMatching = setBestForGenome(matchingSeqs)
-    sangerListNonMatching = setBestForGenome(nonMatchingSeqs)
+    #sangerListMatching = setBestForGenome(matchingSeqs)
+    #sangerListNonMatching = setBestForGenome(nonMatchingSeqs)
 
-    if len(sangerListMatching) > 0:
-        writeToBestQueriesFile(sangerListMatching, ordernum, sangerQueriesAll,
-                               f"{outSangerDir}/CSVfiles/BestQueriesByGenome_{ordernum}.csv")
+    #if len(sangerListMatching) > 0:
+    #    writeToBestQueriesFile(sangerListMatching, ordernum, allSangers,
+    #                           f"{outSangerDir}/CSVfiles/BestQueriesByGenome_{ordernum}.csv")
 
-    if len(sangerListNonMatching) > 0:
-        writeToBestQueriesFile(sangerListNonMatching, ordernum, sangerQueriesAll,
-                               f"{outSangerDir}/CSVfiles/BestQueriesByGenome_{ordernum}_ImperfectSeq.csv")
+    #if len(sangerListNonMatching) > 0:
+    #    writeToBestQueriesFile(sangerListNonMatching, ordernum, allSangers,
+    #                           f"{outSangerDir}/CSVfiles/BestQueriesByGenome_{ordernum}_ImperfectSeq.csv")
 
     # Make working sets of sanger queries and save to files
-    workingSetSangerQueriesMatching = buildWorkingSetFromAllQueries(matchingSeqs)
-    workingSetSangerQueriesNonMatching = buildWorkingSetFromAllQueries(nonMatchingSeqs)
+    #workingSetSangerQueriesMatching = buildWorkingSetFromAllQueries(matchingSeqs)
+    #workingSetSangerQueriesNonMatching = buildWorkingSetFromAllQueries(nonMatchingSeqs)
 
-    if workingSetSangerQueriesMatching.workingSet:
-        workingSetSangerQueriesMatching.__printToJson__(f"{outSangerDir}", ordernum)
-    if workingSetSangerQueriesNonMatching.workingSet:
-        workingSetSangerQueriesNonMatching.__printToJson__(f"{outSangerDir}", f"{ordernum}_NonMatching")
 
     # Pull from Working Sets of Queries
     originalData = buildFullWorkingSet(False)
+    sangerSeqs.__setOriginalQuery__(originalData)
+
+
+    print("Query\tOrder\tDsGFPmismatch\tNumBlastHits\tQuery\tGenome\tNumHits")
+    for s in sangerSeqs.sangerWorkingSet:
+        #"{self.queryName}\t{self.orderNum}\t{self.dsgfpMismatch}\t{len(self.possibleQueryMatches)}"
+        print(sangerSeqs.sangerWorkingSet[s].__dataLine__())
+
+
+
+
+    #TODO: write this stuff to file!!!!
+
+    exit()
     # Sort into 6 categories:
     #   dataMatching                    sequence and genome match
     #   badDataMatching                 sequence matches, genome does not

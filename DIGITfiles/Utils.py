@@ -11,6 +11,8 @@ from Primer import Primer
 from Query import Query
 from QueriesWorkingSet import QueriesWorkingSet
 
+from SangerSeq import SangerSeq
+
 
 ### TODO: redo this what the hell
 def getAorB(query, originalData):
@@ -265,7 +267,7 @@ def getNumHits(line, numHits):
 def getQueryName(line, qName):
     blastData = line.split(' ')
     if blastData[1] == "Query:":
-        return blastData[2]
+        return blastData[2].strip()
     return qName
 
 
@@ -302,6 +304,8 @@ def getSequence(filename, dsgfpEnd):
         seqMatchObj = SequenceMatcher(lambda x: x == "ACGT", sequence, dsgfpEnd)
         matchObj = seqMatchObj.find_longest_match(0, len(sequence), 0, len(dsgfpEnd))
         return sequence, matchObj.a, True
+    # TODO: catch sequences that DO NOT HAVE dsgfp end AT ALL
+    # TODO: on SequenceMatcher, find out how "off" the dsgfp end is
 
 
 def getSequenceID(metadata, notExact):
@@ -313,7 +317,7 @@ def getSequenceID(metadata, notExact):
     '''
     seqID = re.findall(r"R\d{1,4}[A-Z]*\d{1,4}", metadata)
     if notExact:
-        return seqID[0] + "_ImperfectMatchDsGfp"
+        return seqID[0] + "_OffDsGFP"
     return seqID[0]
 
 
@@ -432,11 +436,46 @@ def pickGenome(allele, bestBitScore, allQueries):
     elif bestBitScore["A188v1"] != 0:
         workingQuerySelection("A188v1", allele, allQueries)
     else:
-        print("you really messed something up")
+        # Does not appear in any genome
+        noQueryInGenomes(allele, allQueries)
+        print(f"you really messed something up {allele}")
     return
 
 
-def prepFasta(orderDir):
+def noQueryInGenomes(allele, allQueries):
+    for genome in allQueries:
+        for query in allQueries[genome]:
+            if query == allele:
+                for i in range(0, len(allQueries[genome][allele])):
+                    if allQueries[genome][allele][i].bestAlleleForGenome == True:
+                        allQueries[genome][allele][i].bestHitForAllele = None
+                return
+
+            # def createSangerList(orderDir, order):
+
+
+#    order = orderDir.split("/")[-1][-5:]
+#    #print(order)
+##    sangerSeqs = []
+#   for subdir, dirs, files in os.walk(orderDir):
+#      for oneFile in files:
+#         filename = os.path.join(subdir, oneFile)
+#        if filename.find(".seq") != -1:
+#           newSangerObj = SangerSeq(filename)
+#          newSangerObj.__readSeqFile__(filename, order)
+#         sangerSeqs.append(newSangerObj)
+# return sangerSeqs
+
+
+# def prepFasta(sangerSeqList, order):
+#    filename = f"PutSangerOutputFilesHere/{order}/{order}.fasta"
+#    with open(filename, "w") as outfile:
+#        for sangerSeq in sangerSeqList:
+#            outfile.write(sangerSeq.__printToFasta__())
+#    return filename
+
+
+def afdsadsfprepFasta(orderDir):
     '''
     Create a fasta-formatted file from the .seq files contained in the given directory (orderDir). Returns path to
     resultant fasta file.

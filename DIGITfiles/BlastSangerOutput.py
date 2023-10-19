@@ -16,18 +16,27 @@ Written by: Marilyn Leary 2023
 import sys
 
 from Utils import *
+from SangerSeqWorkingSet import *
 
 
 def main():
     orderDir = sys.argv[1]
-    filename = prepFasta(orderDir)
+
     order = orderDir.split("/")[-1]
+
+    sangerSeqSet = SangerSeqWorkingSet(order)
+    sangerSeqSet.__appendSangerSeqObjsToWorkingSet__(orderDir)
+    fastaFile = sangerSeqSet.__prepFasta__()
+
     newDirs = [f"DIGIToutput/SangerSequences",
                f"DIGIToutput/SangerSequences/{order}",
-               f"DIGIToutput/SangerSequences/{order}/BlastOutput"]
+               f"DIGIToutput/SangerSequences/{order}/BlastOutput",
+               f"DIGIToutput/SangerSequences/{order}/JSONfiles"]
     makeDirectories(newDirs)
 
-    callBlastScript(filename, f"DIGIToutput/SangerSequences/{order}/BlastOutput", order)
+    callBlastScript(fastaFile, f"DIGIToutput/SangerSequences/{order}/BlastOutput", order)
+    sangerSeqSet.__printToJson__()
+
 
 
 if __name__ == '__main__':
