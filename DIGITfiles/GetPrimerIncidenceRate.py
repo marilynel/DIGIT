@@ -1,13 +1,11 @@
 '''
-GetPrimerIncidenceRate.py creates a csv file out of number of times each primer occurs in each of
-the genomes, A188,
+GetPrimerIncidenceRate.py creates a csv file out of number of times each primer occurs in each of the genomes, A188,
 B73, and W22.
 
 Written by: Marilyn Leary 2023
 
     Input:
-    flankseq (sys.argv[1])  String representing the Flanking Sequence Set of interest. Should
-    match with a subfolder of
+    flankseq (sys.argv[1])  String representing the Flanking Sequence Set of interest. Should match with a subfolder of
                             DIGIToutput/FlankingSequences
 
     Output:
@@ -32,8 +30,7 @@ def main():
     # Create dict of Primer objects; key=query (R num), val=list of Primer objects
     primerDict = makePrimerDict(allPrimers)
 
-    workingQueriesJsonFile = f"DIGIToutput/FlankingSequences/" \
-                             f"{flankseq}/QueryData/JSONfiles/WorkingSet_{flankseq}.json"
+    workingQueriesJsonFile = f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/JSONfiles/WorkingSet_{flankseq}.json"
     queriesWorkingSet = QueriesWorkingSet()
     queriesWorkingSet.__createQueryStructFromJson__(workingQueriesJsonFile)
 

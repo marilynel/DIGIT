@@ -14,7 +14,6 @@ https://www.metagenomics.wiki/tools/blast/blastn-output-format-6
 
 from Query import *
 
-
 class GffLine:
     def __init__(self):
         self.seqid = None
@@ -98,9 +97,9 @@ class GffFile:
     def __readFromJson__(self):
         # This function needs to be updated
         pass
-        # queriesWorkingSet = {}
-        # createQueryStruct(self.filename, queriesWorkingSet)
-        # self.__formatFromQueriesWorkingSet__(queriesWorkingSet)
+        #queriesWorkingSet = {}
+        #createQueryStruct(self.filename, queriesWorkingSet)
+        #self.__formatFromQueriesWorkingSet__(queriesWorkingSet)
 
     def __writeToGffFile__(self, filename):
         with open(filename, "w") as gfile:
