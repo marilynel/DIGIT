@@ -1,12 +1,11 @@
 import re
 from difflib import SequenceMatcher
-
 import json
-# import os
-
-# import subprocess
+import os
 
 from Query import *
+from QueriesWorkingSet import *
+from GFF import *
 
 
 class SangerSeq:
@@ -21,41 +20,84 @@ class SangerSeq:
         self.rawSequence = ""
         self.sequence = ""
         self.cleanSequence = ""
-        self.dsgfpMismatch = False
+
+        self.dsgfpMatches = True
+        self.dsgfpPresent = True
+        self.blastable = True
+        self.foundOriginalQuery = True
+        self.bestSangerMatchesBestOriginal = True
+        self.sangerSequenceFoundInGenome = True
+
         self.sangerQueryObj = None
         self.originalQueryObj = None
         self.dsgfpEnd = "TTTTACCGACCGTTCCCGACCGTTTTCATCCCTA"
         self.possibleQueryMatches = []
-        self.foundInA188 = False
-        self.foundInB73 = False
-        self.foundInW22 = False
+
+    def __setOriginalQueryObj__(self, ogDict):
+        # {'R46C04a': <Query.Query object at 0x7f28cce9a438>, 'R46C04b': <Query.Query object at 0x7f28cce9a470>}
+        # No potential matches at all
+        if len(ogDict) == 0:
+            # print(f"no matches found for {self.queryName}")
+            emptyQ = Query("", "", 0)
+            emptyQ.query = self.queryName
+            emptyQ.numHits = 0
+            self.originalQueryObj = emptyQ
+            self.foundOriginalQuery = False
+
+        # Potential match in single sequence set
+        if len(ogDict) == 1:
+            # print(f"{self.queryName} is in single seq set")
+            self.originalQueryObj = ogDict[self.queryName]
+
+        if len(ogDict) > 1:
+            x = True
+            for query in ogDict:
+                # print(query)
+                if self.cleanSequence[:20] == ogDict[query].flankingSequence[:20]:
+                    x = False
+                    # print(f"{query} is in two seq set")
+                    self.queryName = ogDict[query].query
+                    self.originalQueryObj = ogDict[query]
+            if x:
+                # print(f"{query} is not identifiable in two seq set")
+                emptyQ = Query("", "", 0)
+                emptyQ.query = query
+                self.originalQueryObj = emptyQ
+                self.foundOriginalQuery = False
 
     def __dataLine__(self):
-        if self.originalQueryObj:
-            return f"{self.queryName}\t{self.sangerQueryObj.genome}\t{self.originalQueryObj.genome}\t{self.__compareSangerAndOriginal__()}"
-        else:
-            return f"{self.queryName}\t{self.sangerQueryObj.genome}\tnone\t{self.__compareSangerAndOriginal__()}"
-
-    def __compareSangerAndOriginal__(self):
-        # return (f"{type(self.sangerQueryObj)}\t{type(self.originalQueryObj)}")
-        if not self.originalQueryObj:
-            return False
-        if (self.sangerQueryObj.genome != self.originalQueryObj.genome) or (
-                self.sangerQueryObj.chromosome != self.originalQueryObj.chromosome) or (
-                self.sangerQueryObj.sStart != self.originalQueryObj.sStart):
-            return False
-        return True
+        # For printing sanger data to CSV
+        return f"{self.queryName},{self.dsgfpMatches},{self.dsgfpPresent},{self.blastable}," + \
+               f"{self.foundOriginalQuery},{self.bestSangerMatchesBestOriginal},{self.sangerSequenceFoundInGenome},{self.sangerQueryObj.genome}," + \
+               f"{self.sangerQueryObj.chromosome},{self.originalQueryObj.genome}," + \
+               f"{self.originalQueryObj.chromosome},{self.sangerQueryObj.sStart},{self.sangerQueryObj.sEnd}," + \
+               f"{self.originalQueryObj.sStart},{self.originalQueryObj.sEnd},{self.sangerQueryObj.eValue}," + \
+               f"{self.originalQueryObj.eValue},{self.sangerQueryObj.bitScore},{self.originalQueryObj.bitScore}," + \
+               f"{self.sangerQueryObj.qStartStatus},{self.originalQueryObj.qStartStatus}\n"
+        # return ""
 
     def __findBestHit__(self):
+        if len(self.possibleQueryMatches) == 0:
+            self.sangerQueryObj = Query("", "", 0)
+            self.bestSangerMatchesBestOriginal = False
+            self.sangerSequenceFoundInGenome = False
         for i in range(len(self.possibleQueryMatches)):
             if self.possibleQueryMatches[i].bestHitForAllele:
                 self.sangerQueryObj = self.possibleQueryMatches[i]
+                self.__validate__()
                 break
+
+    def __validate__(self):
+        if self.sangerQueryObj.genome != self.originalQueryObj.genome:
+            self.bestSangerMatchesBestOriginal = False
+        if self.sangerQueryObj.chromosome != self.originalQueryObj.chromosome:
+            self.bestSangerMatchesBestOriginal = False
+        if self.sangerQueryObj.sStart != self.originalQueryObj.sStart:
+            self.bestSangerMatchesBestOriginal = False
 
     def __readSeqFile__(self, filename, order):
         # 28329_C02_R179H03_5-Ds-3_C02_006.seq
         self.orderNum = order
-        # self.query =  re.findall (r"R\d{1,4}[A-Z]*\d{1,4}", filename)
         if filename.find("DsGFP_3UTR") != -1:
             self.primerMatch = "DsGFP_3UTR"
         if filename.find("5-Ds-3") != -1:
@@ -70,28 +112,36 @@ class SangerSeq:
                 self.rawSequence += line.strip()
 
         self.__removeDsgfp__()
-        self.__cleanConsecutiveNs__()
+        if len(self.sequence) > 0:
+            self.__cleanConsecutiveNs__()
+
+        if len(self.cleanSequence) < 22 or not self.dsgfpPresent:
+            self.blastable = False
 
     def __printToFasta__(self):
-        return f">{self.queryName}\n{self.cleanSequence}\n"
+        if self.blastable:
+            return f">{self.queryName}\n{self.cleanSequence}\n"
+        pass
 
     def __removeDsgfp__(self):
         dsIdx = 0
-        # fastaFormatStr += sequence[:endIdx] + "\n"
         if self.rawSequence.find(self.dsgfpEnd) != -1:
             dsIdx = self.rawSequence.find(self.dsgfpEnd)
-            #       raw seq     index
-            # return sequence, sequence.find(dsgfpEnd), False
+            self.dsgfpMatches = True
+
         else:
-            self.dsgfpMismatch = True
-            try:
-                seqMatchObj = SequenceMatcher(lambda x: x == "ACGT", self.rawSequence,
-                                              self.dsgfpEnd)
-                matchObj = seqMatchObj.find_longest_match(0, len(self.rawSequence), 0,
-                                                          len(self.dsgfpEnd))
+            self.dsgfpMatches = False
+            seqMatchObj = SequenceMatcher(lambda x: x == "ACGT", self.rawSequence, self.dsgfpEnd)
+            matchObj = seqMatchObj.find_longest_match(0, len(self.rawSequence), 0,
+                                                      len(self.dsgfpEnd))
+            if matchObj.size >= len(self.dsgfpEnd) / 2:
                 dsIdx = matchObj.a
-            except:
-                dsIdx = None
+            else:
+                dsIdx = -1
+                self.sequence = ""
+                self.cleanSequence = ""
+                self.dsgfpPresent = False
+                return
         self.sequence = self.rawSequence[dsIdx + len(self.dsgfpEnd):-22]
 
     def __cleanConsecutiveNs__(self):
@@ -105,10 +155,11 @@ class SangerSeq:
         self.cleanSequence = self.sequence
 
     def __addToPossibleQueries__(self, queryObj):
-        if queryObj.query == self.querName:
+        if queryObj.query == self.queryName:
             self.possibleQueryMatches.append(queryObj)
 
     def __SangerSeqFromJSON__(self, jsonObject):
+
         self.queryName = jsonObject["queryName"]
         self.metadata = jsonObject["metadata"]
         self.orderNum = jsonObject["orderNum"]
@@ -116,11 +167,27 @@ class SangerSeq:
         self.rawSequence = jsonObject["rawSequence"]
         self.sequence = jsonObject["sequence"]
         self.cleanSequence = jsonObject["cleanSequence"]
-        self.dsgfpMismatch = jsonObject["dsgfpMismatch"]
-        self.sangerQueryObj = jsonObject["sangerQueryObj"]
-        self.originalQueryObj = jsonObject["originalQueryObj"]
+        self.dsgfpMatches = jsonObject["dsgfpMatches"]
+        self.dsgfpPresent = jsonObject["dsgfpPresent"]
+        self.blastable = jsonObject["blastable"]
+        self.foundOriginalQuery = jsonObject["foundOriginalQuery"]
+        self.bestSangerMatchesBestOriginal = jsonObject["bestSangerMatchesBestOriginal"]
+        self.sangerSequenceFoundInGenome = jsonObject["sangerSequenceFoundInGenome"]
+        # self.sangerQueryObj = jsonObject["sangerQueryObj"]
+        # self.originalQueryObj = jsonObject["originalQueryObj"]
         self.dsgfpEnd = jsonObject["dsgfpEnd"]
         self.possibleQueryMatches = jsonObject["possibleQueryMatches"]
+
+        if jsonObject["originalQueryObj"]:
+            self.originalQueryObj = Query("", "", 0)
+            self.originalQueryObj.__QueryFromJSON__(jsonObject["originalQueryObj"])
+        else:
+            self.originalQueryObj = None
+        if jsonObject["sangerQueryObj"]:
+            self.sangerQueryObj = Query("", "", 0)
+            self.sangerQueryObj.__QueryFromJSON__(jsonObject["sangerQueryObj"])
+        else:
+            self.sangerQueryObj = None
 
     def __toJSON__(self):
         json0bj = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
@@ -142,14 +209,26 @@ class SangerSeqSet:
         self.order = order
         self.sangerWorkingSet = {}
 
+    def __printDataFile__(self):
+        filename = f"DIGIToutput/SangerSequences/{self.order}/QueryData/CSVfiles/SangerVsOriginal_{self.order}.csv"
+        with open(filename, "w") as f:
+            f.write(
+                "Query,DsGFPMatch,DsGFPPresent,AbleToBlastSequence,OriginalQueryFound,BestSangerMatchesBestOrigin" +
+                f"al,SangerSequenceFoundInAnyGenome,SangerGenome,SangerChromosome,OriginalGenome,OriginalChromosome,SangerStart,SangerEnd,Origin" +
+                f"alStart,OriginalEnd,SangerEValue,OriginalEValue,SangerBitScore,OriginalBitScore,SangerQStartSta" +
+                f"tus,OriginalQStartStatus\n")
+            for s in self.sangerWorkingSet:
+                if s:
+                    f.write(self.sangerWorkingSet[s].__dataLine__())
+                else:
+                    f.write(f"{s}_is_missing\n")
+
     def __setBestQueryToSanger__(self):
         for s in self.sangerWorkingSet:
             self.sangerWorkingSet[s].__findBestHit__()
 
     def __appendSangerSeqObjsToWorkingSet__(self, orderDir):
         order = orderDir.split("/")[-1][-5:]
-        # print(order)
-        sangerSeqs = []
         for subdir, dirs, files in os.walk(orderDir):
             for oneFile in files:
                 filename = os.path.join(subdir, oneFile)
@@ -163,69 +242,68 @@ class SangerSeqSet:
         filename = f"PutSangerOutputFilesHere/{self.order}/{self.order}.fasta"
         with open(filename, "w") as outfile:
             for q in self.sangerWorkingSet:
-                outfile.write(self.sangerWorkingSet[q].__printToFasta__())
+                if self.sangerWorkingSet[q].__printToFasta__():
+                    outfile.write(self.sangerWorkingSet[q].__printToFasta__())
         return filename
 
     def __printToJson__(self):
-        jsonfile = f"DIGIToutput/SangerSequences/{self.order}/JSONfiles/SangerSet_{self.order}.json"
+        jsonfile = f"DIGIToutput/SangerSequences/{self.order}/QueryData/JSONfiles/SangerSet_{self.order}.json"
         jsonObject = {}
         for s in self.sangerWorkingSet:
             if self.sangerWorkingSet[s].queryName not in jsonObject:
                 jsonObject[self.sangerWorkingSet[s].queryName] = []
             jsonObject[self.sangerWorkingSet[s].queryName] = dict(self.sangerWorkingSet[s])
-        newJSONobject = json.dumps(jsonObject, indent=4)
+        # newJSONobject = json.dumps(jsonObject, indent=4)
+        newJSONobject = json.dumps(jsonObject, indent=4, default=lambda o: o.__dict__)
 
         with open(jsonfile, "w") as outfile:
             outfile.write(newJSONobject)
 
+    def __printToGff__(self, filename):
+        # Save working set in GFF file format. Used internally in class.
+        qwsFormat = QueriesWorkingSet()
+        for s in self.sangerWorkingSet:
+            if self.sangerWorkingSet[s].queryName not in qwsFormat.workingSet:
+                qwsFormat.workingSet[s] = None
+            qwsFormat.workingSet[s] = self.sangerWorkingSet[s].sangerQueryObj
+
+        newGffFile = GffFile()
+        newGffFile.__formatFromQueriesWorkingSet__(qwsFormat.workingSet, "sanger_sequence")
+        newGffFile.__writeToGffFile__(filename)
+
     def __readFromJson__(self):
-        sangerJsonFile = f"DIGIToutput/SangerSequences/{self.order}/JSONfiles/SangerSet_{self.order}.json"
+        sangerJsonFile = f"DIGIToutput/SangerSequences/{self.order}/QueryData/JSONfiles/SangerSet_{self.order}.json"
         jsonFile = open(sangerJsonFile)
         dataFromJSON = json.load(jsonFile)
         jsonFile.close()
 
-        # Read old sangerseq from json
         for sangerSeq in dataFromJSON:
             newSangerSeq = SangerSeq(None)
             newSangerSeq.__SangerSeqFromJSON__(dataFromJSON[sangerSeq])
             if newSangerSeq.queryName not in self.sangerWorkingSet:
                 self.sangerWorkingSet[newSangerSeq.queryName] = None
             self.sangerWorkingSet[newSangerSeq.queryName] = newSangerSeq
-        ## end todo
 
     def __addQueriesToSangerObjs__(self, blastOutputObj):
-        # add the Query objects taht represent blast output hits to the correct item in sangerObjDict
-
-        # for genome in sangerQueriesAll.hits:
         for genome in blastOutputObj.hits:
-            #    for query in sangerQueriesAll.hits[genome]:
             for allele in blastOutputObj.hits[genome]:
-                #        if query in sangerObjDict:
                 if allele in self.sangerWorkingSet:
-                    #            sangerObjDict[query].possibleQueryMatches += sangerQueriesAll.hits[genome][query]
                     self.sangerWorkingSet[allele].possibleQueryMatches += \
                     blastOutputObj.hits[genome][allele]
-        # writeToBestQueriesFile(listQ, ordernum, sangerQueriesAll,
-        # f"DIGIToutput/SangerSequences/{ordernum}/CSVfiles/BestSangersByGenome_{ordernum}.csv")
 
     def __setOriginalQuery__(self, originalData):
-        # queryData, badQueryData, queryDataInTwoSeqs = [], [], []
-
         for query in self.sangerWorkingSet:
-            # queryOG = query.split("_")[0]
+            querya = query + "a"
+            queryb = query + "b"
+            ogDict = {}
             if query in originalData.workingSet:
-                self.sangerWorkingSet[query].originalQueryObj = originalData.workingSet[query]
+                ogDict[query] = originalData.workingSet[query]
+            if querya in originalData.workingSet:
+                ogDict[querya] = originalData.workingSet[querya]
+            if queryb in originalData.workingSet:
+                ogDict[queryb] = originalData.workingSet[queryb]
+            # print(len(ogDict))
+            self.sangerWorkingSet[query].__setOriginalQueryObj__(ogDict)
 
-#            # If the query does not appear in originalData, check if it appears as part of the twoSeq datasets
-#           else:
-#              queryA = queryOG + "a"
-#             queryB = queryOG + "b"
-#
-#           if (queryA in originalData.workingSet) or (queryB in originalData.workingSet):
-#              queryDataInTwoSeqs.append(query)
-#
-#        # If it still doesn't appear, its not there
-#       else:
-#          print(f"{query} does not exist in original dataset")
-#
-# return queryData, badQueryData, queryDataInTwoSeqs
+
+

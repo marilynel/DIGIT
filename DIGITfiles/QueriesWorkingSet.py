@@ -1,5 +1,14 @@
+'''
+QueriesWorkingSet is a class that stores the "best" data from a BlastOutput object. Queries are
+stored as Query objects
+in a dictionary struct. Each query should only appear once within one QueriesWorkingSet object.
+
+Written by: Marilyn Leary
+'''
+
 import json
 import logging
+import os
 
 from GFF import *
 from Query import *
@@ -11,31 +20,73 @@ class QueriesWorkingSet:
     def __init__(self):
         self.workingSet = {}
 
+    def __buildCompleteWorkingSet__(self, b73spec):
+        # Fills QueriesWorkingSet object with all previously found query data. Used to compare
+        # sanger sequencing results
+        # with original generated data. Appears in BlastSangerOutput and ParseSangerResults.
+        for subdir, dirs, files in os.walk("DIGIToutput/FlankingSequences"):
+            if subdir.find("JSON") != -1:
+                for file in files:
+                    if file.find("Working") != -1 and file.find("json") != -1 and file.find(
+                            b73spec) != -1:
+                        self.__createQueryStructFromJson__(subdir + "/" + file)
+
+    def __buildWorkingSetFromBlastOutputObj__(self, blastOutputObj):
+        # Does what the function name says. Used in SequencesFromBlast.
+        print(f"calling __buildWorkingSetFromBlastOutputObj__")
+        for gen in blastOutputObj.hits:
+            for q in blastOutputObj.hits[gen]:
+                for i in range(0, len(blastOutputObj.hits[gen][q])):
+                    if blastOutputObj.hits[gen][q][i].bestHitForAllele:
+                        self.__addToWorkingSet__(blastOutputObj.hits[gen][q][i])
+
     def __addToWorkingSet__(self, queryObj):
-        # for adding a single Query object to workingSet as value (key is string Query.query)
+        # For adding a single Query object to workingSet as value (key is string Query.query).
+        # Used internally in class.
         if queryObj.query not in self.workingSet:
             self.workingSet[queryObj.query] = None
             self.workingSet[queryObj.query] = queryObj
         else:
             logging.info(f"\t{queryObj.query} already exists in working set")
 
+    def __getOriginalFlankingSequences__(self, flankseq):
+        # Add flanking sequences to Query objects in working set from original fasta file that
+        # was blasted. Used in
+        # SequencesFromBlast.
+        flankseqDict = {}
+        with open(f"PutFlankingSequenceFilesHere/{flankseq}.fasta", "r") as fafile:
+            newKey = ""
+            for line in fafile:
+                if line[0] == ">":
+                    newKey = line[1:].strip()
+                    flankseqDict[newKey] = ""
+                else:
+                    flankseqDict[newKey] = line.strip()
+        for query in self.workingSet:
+            if query in flankseqDict:
+                self.workingSet[query].flankingSequence = flankseqDict[query]
+
     def __getQuery__(self, query):
+        # Makes QueriesWorkingSet iterable.
         if query in self.workingSet:
             return self.workingSet[query]
         return None
 
     def __createQueryStructFromJson__(self, filename):
-        # Build workingSet from JSON file
+        # Build workingSet from JSON file. Used in GetPrimerIncidenceRate, GetPrimers,
+        # VerifyPrimers, and internally in
+        # this class.
         jsonFile = open(filename)
         dataFromJSON = json.load(jsonFile)
         jsonFile.close()
         for allele in dataFromJSON:
             if allele not in self.workingSet:
-                self.workingSet[allele] = Query(None, None, None)
+                self.workingSet[allele] = Query("", "", 0)
                 self.workingSet[allele].__QueryFromJSON__(dataFromJSON[allele])
-        self.__findOrderedPrimers__()
 
     def __updateQueryWithPrimer3Data__(self, outputDict, task):
+        # Update Query objects in struct with parsed data from Primer3 initial output. Used in
+        # Utils.
         allele = outputDict["SEQUENCE_ID"].split("_")[-1]
         newP3Obj = Primer3Object(task)
         newP3Obj.__initValsFromP3Output__(outputDict)
@@ -43,13 +94,15 @@ class QueriesWorkingSet:
 
     def __lookupQuery__(self, query):
         # Specifically access Query object for Lookup task
+        # TODO: not currently in use
         if query in self.workingSet:
             self.workingSet[query].__lookupPrint__()
         else:
             print(f"{query} is not in working set")
 
     def __printToJson__(self, filepath, flankseq):
-        # Write workingSet to a JSON file
+        # Write workingSet to a JSON file. Used in GetPrimers, SequencesFromBlast,
+        # and VerifyPrimers.
         filename = f"{filepath}/JSONfiles/WorkingSet_{flankseq}.json"
         jsonObject = {}
         for q in self.workingSet:
@@ -63,6 +116,7 @@ class QueriesWorkingSet:
         self.__printToGff__(f"{filepath}/GFFfiles/WorkingSet_{flankseq}.gff")
 
     def __printToCsv__(self, filename):
+        # Save working set in CSV file. Used internally in class.
         csvName = filename.split(".")[0] + ".csv"
         with open(csvName, "w") as csvFile:
             csvFile.write(
@@ -82,12 +136,14 @@ class QueriesWorkingSet:
                 csvFile.write(self.workingSet[q].__workingSetCsvLine__())
 
     def __printToGff__(self, filename):
+        # Save working set in GFF file format. Used internally in class.
         gffName = filename.split(".")[0] + ".gff"
-        newGffFile = GffFile("")
-        newGffFile.__formatFromQueriesWorkingSet__(self.workingSet)
+        newGffFile = GffFile()
+        newGffFile.__formatFromQueriesWorkingSet__(self.workingSet, "nucleotide_match")
         newGffFile.__writeToGffFile__(gffName)
 
     def __getCoordinatesForFilterFasta__(self):
+        # Finds and sorts location data for whole working set to send to Filterfasta. Used in Utils.
         coorA, coorB, coorW = {}, {}, {}
         for q in self.workingSet:
             if self.workingSet[q].genome.strip() == "A188v1":
@@ -114,6 +170,8 @@ class QueriesWorkingSet:
         return coorA, coorB, coorW
 
     def __assignFilterFastaData__(self, seqData):
+        # Assign sequence data returned from FilterFasta to the appropriate Query object. Used in
+        # Utils.
         for allele in seqData:
             upper, lower, wildtype = "", "", ""
             if allele.find("wt") != -1:
@@ -130,54 +188,58 @@ class QueriesWorkingSet:
 
     def __setPrimerIDs__(self):
         primerObject = PrimerIDs()
-        for query in self.workingSet:
-            leftNameExists, rightNameExists = False, False
-            for primerName in primerObject.listOfPrimers:
-                pts = primerName.split("_")
-                # mr6091a, R98E09b
-                noNum = pts[0][-1] + "_" + pts[1]
-                # is left primer name in there? If so, rename left primer
-                if noNum == self.workingSet[query].primerNameLeft:
-                    self.workingSet[query].primerNameLeft = primerName
-                    leftNameExists = True
-                # is right primer in there? if so, rename right primer
-                if noNum == self.workingSet[query].primerNameRight:
-                    self.workingSet[query].primerNameRight = primerName
-                    rightNameExists = True
+        for p in primerObject.listOfPrimers:  # Ex: p = "mr5161a_R155D07b"
+            pts = p.split("_")  # pts = ["mr5161a", "R155D07b"]
+            qName = pts[1]  # qName = "R155D07b"
+            num = pts[0][2:-1]  # num = "5161"
+            side = pts[0][-1]  # side = "a"
+            preNum = side + "_" + qName  # preNum = "a_R155D07b"
+            if qName in self.workingSet:
+                # Check if primer p matches primerNameLeft for Query q
+                if preNum == self.workingSet[qName].primerNameLeft:
+                    # If so, primerNameLeft has an assigned number already. Update workingSet
+                    self.workingSet[qName].primerNameLeft = p
+                # If its not on the left, check if primer p matches primerNameRight for Query q
+                elif preNum == self.workingSet[qName].primerNameRight:
+                    # If so, primerNameRIght has an assigned number already. Update workingSet
+                    self.workingSet[qName].primerNameRight = p
+                else:
+                    # This condition should never be met
+                    print(f"ERROR with {p}")
 
-            if not leftNameExists:
-                self.workingSet[query].primerNameLeft = ("mr" + str(primerObject.numPrimers) +
-                                                         self.workingSet[query].primerNameLeft)
-                primerObject.listOfPrimers.append(self.workingSet[query].primerNameLeft)
-                primerObject.numPrimers += 1
-
-            if not rightNameExists:
-                self.workingSet[query].primerNameRight = ("mr" + str(primerObject.numPrimers) +
-                                                          self.workingSet[query].primerNameRight)
-                primerObject.listOfPrimers.append(self.workingSet[query].primerNameRight)
-                primerObject.numPrimers += 1
-            primerObject.__rewriteRecordFile__()
+        # check working set for queries that do not have assoc numbers for primers already
+        for q in self.workingSet:
+            if self.workingSet[q].numHits == 0:
+                continue
+            if self.workingSet[q].primerNameLeft[0:2] != "mr":
+                self.workingSet[q].primerNameLeft = f"mr{primerObject.numPrimers}" + \
+                                                    self.workingSet[q].primerNameLeft
+                primerObject.__append__(self.workingSet[q].primerNameLeft)
+            if self.workingSet[q].primerNameRight[0:2] != "mr":
+                self.workingSet[q].primerNameRight = f"mr{primerObject.numPrimers}" + \
+                                                     self.workingSet[q].primerNameRight
+                primerObject.__append__(self.workingSet[q].primerNameRight)
+        primerObject.__rewriteRecordFile__()
+        self.__havePrimersBeenOrderedOrTestedYet__()
 
     def __writeP3InputFile__(self, inputFilepath, task):
-        '''
-        Initializes a Primer3Object for each query in queriesWorkingSet, and creates the input
-        file that will be used with
-        Primer3. Return value is the path to the Primer3 input file (str).
-        Appears in:
-            GetPrimers.py
-        '''
+        # Initializes a Primer3Object for each query in queriesWorkingSet, and creates the input
+        # file that will be used
+        # with Primer3. Return value is the path to the Primer3 input file (str).   
         with open(inputFilepath, "w") as p3file:
             for allele in self.workingSet:
-                p3obj = Primer3Object(task)
-                p3obj.__initValsFromQueryObj__(self.workingSet[allele])
+                if self.workingSet[allele].numHits != 0:
+                    p3obj = Primer3Object(task)
+                    p3obj.__initValsFromQueryObj__(self.workingSet[allele])
 
-                if task == "generic":
-                    p3obj.__buildInputStrGeneric__()
-                else:
-                    p3obj.__buildInputStrValidate__()
-                p3file.write(p3obj.inputStr)
+                    if task == "generic":
+                        p3obj.__buildInputStrGeneric__()
+                    else:
+                        p3obj.__buildInputStrValidate__()
+                    p3file.write(p3obj.inputStr)
 
     def __makeFastaFromPrimers__(self, filename):
+        # Makes a fasta file out of the primers in a Query object.
         with open(filename, "w+") as fafile:
             for q in self.workingSet:
                 if self.workingSet[q].primerSequenceLeft != "FAIL":
@@ -192,6 +254,8 @@ class QueriesWorkingSet:
                     fafile.write(f"{self.workingSet[q].primerSequenceRight}\n")
 
     def __createBadQueryStruct__(self):
+        # Create a new QueriesWorkingSet object to hold failed primers to be saved in a different
+        # location.
         queriesWithBadPrimers = QueriesWorkingSet()
         for q in self.workingSet:
             if self.workingSet[q].primerSequenceRight == "FAIL" or self.workingSet[
@@ -208,35 +272,49 @@ class QueriesWorkingSet:
 
         with open(filename, "w") as primerFile:
             primerFile.write(
-                "PrimerID,Allele,ReferenceGenome,PrimerSequence,MatchingDsGFPPrimer,"
-                "ExpectedProductSizeWithD" +
-                "sPrimer,ExpectedWTProductSize,TM,PrimerPenaltyWithDSPrimer,PrimerPenaltyWT,"
-                "BlastBitScore,To" +
-                "talBlastHitsForRefGenome,QueryStartStatus\n")
+                f"PrimerID,Allele,ReferenceGenome,PrimerSequence,MatchingDsGFPPrimer,"
+                f"ExpectedProductSize" +
+                f"WithDsPrimer,ExpectedWTProductSize,TM,PrimerPenaltyWithDSPrimer,"
+                f"PrimerPenaltyWT,BlastB" +
+                f"itScore,TotalBlastHitsForRefGenome,QueryStartStatus,Ordered,Sangered\n")
             for q in listOfPrimerStrings:
                 primerFile.write(q)
 
-    def __findOrderedPrimers__(self):
-        orderedPrimersDict = {}
+    def __havePrimersBeenOrderedOrTestedYet__(self):
+        # Check if primers have been ordered or sangered already
+        orderedPrimers = {}
         with open("PutOrderedPrimersHere/OrderedPrimers", "r") as opfile:
             for line in opfile:
-                primerName, primerSeq = line.split(",")
-                orderedPrimersDict[primerName.strip()] = primerSeq.strip()
+                primerName, primerSequence = line.split(",")
+                orderedPrimers[primerName.strip()] = primerSequence.strip()
+
+        sangeredPrimers = []
+        with open("PutOrderedPrimersHere/SucessfulPrimersFromSanger", "r") as spfile:
+            for line in spfile:
+                sangeredPrimers.append(line.strip())
 
         for q in self.workingSet:
-            if self.workingSet[q].primerNameLeft in orderedPrimersDict:
+            if self.workingSet[q].primerNameLeft in orderedPrimers:
                 self.workingSet[q].primerLeftOrdered = True
-                if self.workingSet[q].primerSequenceLeft != orderedPrimersDict[
+                if self.workingSet[q].primerSequenceLeft != orderedPrimers[
                     self.workingSet[q].primerNameLeft]:
-                    print(
-                        f"Error: Predicted left primer and ordered left primer do not match for "
-                        f"{q}")
+                    print(f"ERROR: {self.workingSet[q].primerNameLeft} predicted primer " +
+                          f"{self.workingSet[q].primerSequenceLeft} does not match ordered primer "
+                          f"" +
+                          f"{orderedPrimers[self.workingSet[q].primerNameLeft]}")
 
-            if self.workingSet[q].primerNameRight in orderedPrimersDict:
+            if self.workingSet[q].primerNameLeft in sangeredPrimers:
+                self.workingSet[q].primerLeftSangered = True
+
+            if self.workingSet[q].primerNameRight in orderedPrimers:
                 self.workingSet[q].primerRightOrdered = True
-                if self.workingSet[q].primerSequenceRight != orderedPrimersDict[
+
+                if self.workingSet[q].primerSequenceRight != orderedPrimers[
                     self.workingSet[q].primerNameRight]:
-                    print(
-                        f"Error: Predicted right primer and ordered right primer do not match for {q}")
+                    print(f"ERROR: {self.workingSet[q].primerNameRight} predicted primer " +
+                          f"{self.workingSet[q].primerSequenceRight} does not match ordered "
+                          f"primer " +
+                          f"{orderedPrimers[self.workingSet[q].primerNameRight]}")
 
-
+            if self.workingSet[q].primerNameRight in sangeredPrimers:
+                self.workingSet[q].primerRightSangered = True

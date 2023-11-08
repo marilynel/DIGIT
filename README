@@ -146,11 +146,33 @@ reciprical primers (DIGIToutput/<flankseq>/DataSets/FailedPrimers_<flankseq>.csv
 Part 4 will also Blast the primers against the three genomes so that it is possible to see how often that primer appears
 in a genome .
 
+========================================================================================================================
+
+PART 5: insert stuff here
+
+========================================================================================================================
+
+PART 6.1: BLAST SANGER SEQUENCING RESULTS
+
+For the Part 6 menu options, you will need to have .seq files from Sanger sequencing in the PutSangerOutputFilesHere/
+directory. Part 6.1 parses those .seq files, isolates the sequence of interest by removing remnants of the DsGFP
+sequence and composing a fasta file, and submits that fasta file for Blast analysis against the 3 maize genomes. As part
+of this process, Sanger sequences are cleaned up by isolating only sections of the sequence with strong results and
+removing sections with excessive N's. Sequences where the DsGFP element end was only partially found or broken up were
+labelled as imperfect matches.
+
 TODO:
 - parse those results of the Blast
 - count and report number of instances
 - note if there is an instance near the original insertion site
 
+
+========================================================================================================================
+
+PART 6.2: PARSE BLAST SANGER SEQUENCING RESULTS
+
+Part 6.2 parses the blast output from Part 6.1. Sanger sequences that were not found in a genome are noted. The results
+are split into two separate sets, those who had a perfect DsGFP match and those who did not. The best hits are identified (as in Part 2),
 
 
 ========================================================================================================================
