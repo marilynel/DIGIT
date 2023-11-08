@@ -1,8 +1,6 @@
-# from Utils import *
+# This class is not currently in use. May be useful in future versions of DIGIT.
+
 from Query import *
-
-
-# Not currently in use
 
 
 class Primer:

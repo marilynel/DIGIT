@@ -1,7 +1,16 @@
+'''
+WARNING: I do not recommend changing this code AT ALL unless absolutely necessary. Please make
+sure you fully understand
+how this class is used by DIGIT before augmenting it.
+'''
+
+'''
+This function creates files structured to submit to Primer3 on CQLS. 
+
+Written by: Marilyn Leary 2023
+'''
+
 from Sequences import Sequences
-
-
-# from Query import Query
 
 
 class Primer3Object:
@@ -112,7 +121,8 @@ class Primer3Object:
         if self.task == "generic":
             # Searching for allele-specific primers to match 3DsgG and GFP3UTR (from DsGFP element)
             if self.strand == 1:
-                # On the plus strand, 3DsgG will be used to find the left primer and GFP3UTR will be used to find the right primer
+                # On the plus strand, 3DsgG will be used to find the left primer and GFP3UTR will
+                # be used to find the right primer
                 self.primerSequenceRight = self.seqObj.dsgg3
                 self.productSizeStrLeft = self.seqObj.dsgg3Size
                 self.bobbyLeft = self.seqObj.dsgg3Hairpin
@@ -122,7 +132,8 @@ class Primer3Object:
                 self.bobbyRight = self.seqObj.gfp3utrHairpin
 
             elif self.strand == -1:
-                # On the minus strand, GFP3UTR will be used to find the left primer and 3DsgG will be used to find the right primer
+                # On the minus strand, GFP3UTR will be used to find the left primer and 3DsgG
+                # will be used to find the right primer
                 self.primerSequenceRight = self.seqObj.gfp3utr
                 self.productSizeStrLeft = self.seqObj.gfp3utrSize
                 self.bobbyLeft = self.seqObj.gfp3utrHairpin
@@ -172,8 +183,6 @@ class Primer3Object:
         Compose begining of input string for Validation P3 input.
         '''
         self.inputStr = (
-            # f"SEQUENCE_ID={self.primerNameLeft}\n" +
-            # TODO: changed here
                 f"SEQUENCE_ID={self.query}\n" +
                 f"SEQUENCE_TEMPLATE={self.wildtypeSequence}\n" +
                 f"SEQUENCE_PRIMER={self.primerSequenceLeft}\n" +

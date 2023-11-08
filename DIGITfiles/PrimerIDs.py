@@ -1,4 +1,9 @@
-# from Query import Query
+'''
+This class interfaces with the record list of primers that have previously been identified and
+named, in order to avoid
+renaming and misidentifying primers.
+'''
+
 
 class PrimerIDs:
     def __init__(self):
@@ -9,6 +14,10 @@ class PrimerIDs:
                 self.listOfPrimers.append(line.strip())
 
         self.numPrimers = len(self.listOfPrimers) + 1
+
+    def __append__(self, primerName):
+        self.listOfPrimers.append(primerName)
+        self.numPrimers += 1
 
     def __iter__(self):
         return self

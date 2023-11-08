@@ -3,7 +3,7 @@ GetPrimers.py
     1. parses the initial Primer3 output file for primer information
     2. saves primer data to the WorkingSet JSON document
     3. composes a Primer3 input file to be used for verification
-    4. calls primer3_core with new Primer3 input file for verification
+    4. calls primer3_core with new Primer3 input file for verification using wildtype sequences
 
 
 Written by: Marilyn Leary 2023

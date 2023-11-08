@@ -1,11 +1,16 @@
 '''
+WARNING: I do not recommend changing this code AT ALL unless absolutely necessary. Please make sure you fully understand
+how this class is used by DIGIT before augmenting it.
+'''
+
+'''
 FilterFasta.py finds multiple genomic sequences in a genome at given coordinates.
 
 Written by: Marilyn Leary 2023
 
-    Input:
-    filename        Path to fasta file of reference genome (many can be found at
-                    https://www.ncbi.nlm.nih.gov/data-hub/genome/)
+    Input: 
+    filename        Path to fasta file of reference genome (many can be found at 
+                    https://www.ncbi.nlm.nih.gov/data-hub/genome/) 
     coordinates     A dictionary containing the information to look up in reference genome. Format as follows:
 
                     coordinates = {

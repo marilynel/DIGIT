@@ -1,13 +1,58 @@
+Box
+-   check upload/download file instructions on Box
+-   make sure file formats are descriped for
+    ->  Flanking Sequence fasta files
+    ->  compListPreviousPrimers
+    ->  Sanger Outputfiles
+    ->  ordered primers list 
+-   describe folder file structure
+-   add instructions on naming conventions for
+    ->  flanking sequence fasta files
+    ->  alleles/queries
+    ->  primers
+    ->  sanger sequences
+    ->  sanger sequence primers
+
+GFF file formats
+-   note in attributes if sequence i sfrom sanger 
+
+
+SGE
+-   add function to look into sge files for errors
+-   report if there are errors
+
+
+Ordered primers
+-   add list of primers that are ordered/tested/etc
+-   look into adding attribute to primer object (is there a primer object?) indicating ordered/tested status
+-   
+
+B73 only search
+-   make sure all steps complete ok for regular flanking sequences
+-   implement B73 only steps for sanger sequences
+
 General
+-   check to make sure the correct files exist to do a step (current set up does not work)
 -   look in folder for dbs and blast/filterfasta only against those
--   check if a step has already been completed and ask if user wants to continue or go back to main menu
-
-
-Usage
 -   catch if user tries to do something prematurely
 -   give user an option to go back if they don't see the files they want
+-   implement lookup option for specific query or primer or sangerseq
+-   fix file permissions issue somehow???
+
+Blasting primers
+-   check that primer is inside WT coordinates at least once
+-   report if yes/no (may need to just clean up output)
+
+
+TODO: do sanger stuff first!!!
+Sanger sequences
+-   check if sequences occur in two seqs data (naming convention changes)
+-   put all data on one paper
+-   look for sanger seqs that have no blast matches
+
+lookup: ask for allele, get family, and vice cersa
 
 
 
-
-
+Ask John:
+-   notify when allele has no hits in a genome?

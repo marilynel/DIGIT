@@ -1,5 +1,6 @@
 import sys
 
+from BlastOutput import *
 from QueriesWorkingSet import QueriesWorkingSet
 from Query import Query
 from FilterFasta import filterFasta
@@ -7,27 +8,6 @@ from Sequences import Sequences
 from Primer3Object import Primer3Object
 from PrimerIDs import PrimerIDs
 from Utils import *
-
-# allQueries is a dict with structure:
-#   {
-#       databaseA:
-#           {
-#               query1:[QueryObj, QueryObj, QueryObj],
-#               query2:[QueryObj]
-#           }
-#       databaseB:
-#           {
-#               query1:[QueryObj, QueryObj, QueryObj],
-#               query2:[QueryObj]
-#           }
-#   }   etc.
-
-
-allQueries = {
-    "A188v1": {},
-    "B73v5": {},
-    "W22v2": {}
-}
 
 
 def main():
@@ -39,10 +19,13 @@ def main():
 
     newFlankseq = flankseq
     genomeSpec = ""
+    x = False
+
     if b73only == 2:
         genomeSpec = "B73"
         newFlankseq += "B73Only"
-
+        x = True
+        print(f"butts\t{x}")
     necessaryDirs = [
         f"{outputDir}",
         f"{outputDir}/{newFlankseq}",
@@ -56,21 +39,16 @@ def main():
     ]
 
     makeDirectories(necessaryDirs)
+    print("abc")
+    # Read Blast output data into allQueries BlastOutput Object
+    allQueries = BlastOutput(flankseq, "FlankingSequences")
+    allQueries.__fillBlastOutputObject__(x, False)
 
-    findBlastOutputFiles(f"{outputDir}/{flankseq}/BlastOutput/FlankingSequenceBlast", allQueries,
-                         genomeSpec)
+    # Identify "best" hits for each allele and use to create a QueriesWorkingSet Object,
+    # queriesWorkingSet
+    queriesWorkingSet.__buildWorkingSetFromBlastOutputObj__(allQueries)
 
-    listQueries = setBestForGenome(allQueries)
-
-    writeToBestQueriesFile(listQueries, flankseq, allQueries,
-                           f"{outputDir}/{newFlankseq}/QueryData/CSVfiles/BestQueriesByGenome_"
-                           f"{newFlankseq}.csv")
-
-    allQueriesToJSON(
-        f"{outputDir}/{newFlankseq}/QueryData/JSONfiles/AllBlastData_{newFlankseq}.json",
-        allQueries)
-
-    queriesWorkingSet = buildWorkingSetFromAllQueries(allQueries)
+    queriesWorkingSet.__getOriginalFlankingSequences__(flankseq)
 
     runFilterfasta(queriesWorkingSet)
 
@@ -82,8 +60,7 @@ def main():
     queriesWorkingSet.__writeP3InputFile__(inputFile, "generic")
 
     runPrimer3(inputFile, newFlankseq,
-               f"{outputDir}/{newFlankseq}/QueryData/Primer3/FindingPrimers/Primer3Output_{
-    newFlankseq}.txt")
+               f"{outputDir}/{newFlankseq}/QueryData/Primer3/FindingPrimers/Primer3Output_{newFlankseq}.txt")
 
     queriesWorkingSet.__printToJson__(f"{outputDir}/{newFlankseq}/QueryData", newFlankseq)
 

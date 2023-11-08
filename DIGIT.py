@@ -61,7 +61,6 @@ def dirSelect(dirname):
     except:
         print(f"\nPlease don't be weird, just select a real directory. Exiting.\n")
         logging.info(f"\tUser decided to be weird and tried to select {sel}")
-        # TODO: make this exit() uncessary
         exit()
 
 
@@ -99,8 +98,8 @@ def runBlast():
         ]
 
         makeDirectories(initialDirs)
-        filesExist(f"DIGIToutput/FlankingSequences/{flankseq}/BlastOutput/FlankingSequenceBlast",
-                   ["tab"])
+        # filesExist(f"DIGIToutput/FlankingSequences/{
+        # flankseq}/BlastOutput/FlankingSequenceBlast", ["tab"])
         callBlastScript(
             f"PutFlankingSequenceFilesHere/{fastaFile}",
             f"DIGIToutput/FlankingSequences/{flankseq}/BlastOutput/FlankingSequenceBlast",
@@ -274,7 +273,7 @@ def main():
         f" genomes")
     print(f"(5) Check frequency of primers in genomes")
     print(f"(6) Go to Sanger Sequence Parsing menu")
-    print(f"(7) Look up data for specific allele")
+    print(f"(7) Look up data for specific allele, primer, or sanger sequence")
     print(f"(8) Remove extraneous sge files from directory")
     print(f"(9) Use 'qstat' to check job status\n")
 
