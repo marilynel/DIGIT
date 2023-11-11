@@ -1,14 +1,16 @@
 '''
-BlastSangerOutput.py creates a fasta file out of the .seq files returned from sanger sequencing and blasts those
-sequences against the three reference genomes, A188, B73, and W22.
+BlastSangerOutput.py:
+    1.  Creates a fasta file out of the .seq files returned from sanger sequencing.
+    2.  Blasts the fasta file against the three reference genomes, A188, B73, and W22.
+    3.  Builds preliminary Sanger Working SetD
 
 Written by: Marilyn Leary 2023
 
-    Input:
+Input:
     orderDir (sys.argv[1])  Path to directory containing sanger sequencing .seq files. Should be a subdirectory within
                             PutSangerOutputFilesHere/.
 
-    Output:
+Output:
     Three Blast output files with path and naming convention:
         DIGIToutput/SangerSequences/<orderNumber>/BlastOutput/<referenceGenome_vs_orderNumber>.tab
 '''

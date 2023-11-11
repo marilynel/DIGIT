@@ -36,11 +36,11 @@ class GffLine:
             self.start = temp
 
 
-    def __fromQuery__(self, query, seqType):
+    def __fromQuery__(self, query):
         # Converts Query object to GffLine object. Used in GffFile class.
         self.seqid = query.chromosome
         self.source = "DIGIT"
-        self.type = seqType
+        #self.type = seqType
         self.start = query.sStart
         self.end = query.sEnd
         self.score = query.eValue
@@ -69,24 +69,29 @@ class GffLine:
 
 class GffFile:
     def __init__(self):
-        self.listGffLines = []
-
+        #self.listGffLines = []
+        self.gffLinesByGenome = {}
 
     def __formatFromQueriesWorkingSet__(self, workingSet, seqType):
         # Creates a GFF file from the selected working set of queries. Used in QueriesWorkingSet class.
         for query in workingSet:
             if workingSet[query]:
+                if workingSet[query].genome not in self.gffLinesByGenome:
+                    self.gffLinesByGenome[workingSet[query].genome] = []
                 gffLine = GffLine(seqType)
-                gffLine.__fromQuery__(workingSet[query], seqType)
-                self.listGffLines.append(gffLine)
+                gffLine.__fromQuery__(workingSet[query])
+                self.gffLinesByGenome[workingSet[query].genome].append(gffLine)
 
 
     def __writeToGffFile__(self, filename):
         # Write data to GFF file. Used in QueriesWorkingSet class.
-        with open(filename, "w") as gfile:
-            gfile.write(f"##gff-version 3.1.26\n")
-            for gff in self.listGffLines:
-                gfile.write(gff.__stringGffLine__())
+        gffName = filename.split(".")[0] + ".gff"
+        for genome in self.gffLinesByGenome:
+            newFileName = filename.split(".")[0] + "_" + genome + ".gff"
+            with open(newFileName, "w") as gfile:
+                gfile.write(f"##gff-version 3.1.26\n")
+                for gff in self.gffLinesByGenome[genome]:
+                    gfile.write(gff.__stringGffLine__())
 
 
 

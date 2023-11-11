@@ -1,14 +1,18 @@
 '''
-Check Primer3 verification for any issues, produce primer dataset, and Blast primer dataset against all three genomes.
-
-Creates primer dataset files.
+VerifyPrimers.py:
+    1.  Parses Primer3 verification output and stores relevant data in the QueriesWorkingSet for that set.
+    2.  Creates a fasta file of the potential primers and gives user the option to blast primers against genomes.
+    3.  Sorts primers based on Primer3 verification and produces two files, one with successful primers and one with
+        failed primers.
 '''
-from QueriesWorkingSet import QueriesWorkingSet
-from Query import Query
-from Utils import *
+
 import json
 import os
 import sys
+
+from QueriesWorkingSet import QueriesWorkingSet
+from Query import Query
+from Utils import *
 
 
 def main():
@@ -22,7 +26,6 @@ def main():
     queriesWorkingSet = QueriesWorkingSet()
     queriesWorkingSet.__createQueryStructFromJson__(workingQueriesJsonFile)
 
-    # TODO: move this to Query or QueriesWorkingSet classes?
     # Read P3 verification output & update primers
     readPrimer3Output(f"{outputDir}/QueryData/Primer3/VerifyingPrimers/Primer3VerificationOutput_{flankseq}.txt",
                       "check_primers", queriesWorkingSet)

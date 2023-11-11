@@ -8,11 +8,11 @@ GetPrimers.py
 
 Written by: Marilyn Leary 2023
 
-    Input:
+Input:
     flankseq (sys.argv[1])  String representing the Flanking Sequence Set of interest. Should match with a subfolder of
                             DIGIToutput/FlankingSequences
 
-    Output:
+Output:
     Working set files in CSV, JSON, and GFF formats:
         DIGIToutput/FlankingSequences/<flankseq>/QueryData/JSONfiles/WorkingSet_<flankseq>.json
         DIGIToutput/FlankingSequences/<flankseq>/QueryData/CSVfiles/WorkingSet_<flankseq>.csv

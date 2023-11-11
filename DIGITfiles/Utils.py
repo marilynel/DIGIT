@@ -1,5 +1,5 @@
-from difflib import SequenceMatcher
 
+from difflib import SequenceMatcher
 import json
 import os
 import re
@@ -30,9 +30,8 @@ def getAorB(query, originalData):
             "strand": originalData.workingSet[query].strand,
             "qStartStatus": originalData.workingSet[query].qStartStatus
         }
-    return {"genome": None, "chromosome": None, "sStart": None, "sEnd": None, "eValue": None,
-            "bitScore": None, "numHits":
-                None, "strand": None, "qStartStatus": None}
+    return {"genome": None, "chromosome": None, "sStart": None, "sEnd": None, "eValue": None, "bitScore": None, "numHits":
+        None, "strand": None, "qStartStatus": None}
 
 
 # TODO: not yet in use
@@ -49,12 +48,12 @@ def callPrimerBlastScript(pathToFastaInput, pathToDesitinationDir):
     Appears in:
         VerifyPrimers.py
     '''
-    subprocess.run(
-        ["sh", f"./DIGITfiles/RunBlastPrimers.sh", pathToFastaInput, pathToDesitinationDir])
+    subprocess.run \
+        (["sh", f"./DIGITfiles/RunBlastPrimers.sh", pathToFastaInput, pathToDesitinationDir])
 
-    print(
-        f"SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running" +
-        f" time may vary wildly.\n")
+    print \
+        (f"SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running" +
+          f" time may vary wildly.\n")
 
 
 def callBlastScript(pathToFastaInput, pathToDesitinationDir, fastaContents):
@@ -63,13 +62,12 @@ def callBlastScript(pathToFastaInput, pathToDesitinationDir, fastaContents):
     Appears in:
         BlastSangerOutput.py
     '''
-    subprocess.run(
-        ["sh", f"./DIGITfiles/RunBlastInitial.sh", pathToFastaInput, pathToDesitinationDir,
-         fastaContents])
+    subprocess.run \
+        (["sh", f"./DIGITfiles/RunBlastInitial.sh", pathToFastaInput, pathToDesitinationDir, fastaContents])
 
-    print(
-        f"SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running" +
-        f" time may vary wildly.\n")
+    print \
+        (f"SGE may take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running" +
+          f" time may vary wildly.\n")
 
 
 # TODO: move this to Query class?
@@ -80,8 +78,8 @@ def checkCoordinates(primer, query):
     '''
     if matchChrAndGenome(primer, query):
         if query.strand == 1:
-            if (primer.sStart >= query.wildtypeCoordinates[0]) and (
-                    primer.sEnd <= query.wildtypeCoordinates[1]):
+            if (primer.sStart >= query.wildtypeCoordinates[0]) and \
+                    (primer.sEnd <= query.wildtypeCoordinates[1]):
                 return True
         elif query.strand == -1:
             if (primer.sStart <= query.wildtypeCoordinates[0]) and (
@@ -139,23 +137,6 @@ def makeDirectories(necessaryDirs):
             os.makedirs(dir)
 
 
-# TODO: do I want to use this at all?
-def makePrimerDict(allPrimers):
-    '''
-    Appears in:
-        GetPrimerIncidenceRate.py
-    '''
-    primerDict = {"A188v1": {}, "B73v5": {}, "W22v2": {}}
-    for genome in allPrimers:
-        for primer in allPrimers[genome]:
-            for i in range(0, len(allPrimers[genome][primer])):
-                newPrimer = Primer(allPrimers[genome][primer][i])
-                if newPrimer.query not in primerDict[genome]:
-                    primerDict[genome][newPrimer.query] = []
-                primerDict[genome][newPrimer.query].append(newPrimer)
-    return primerDict
-
-
 def matchChrAndGenome(primer, query):
     '''
     Appears in:
@@ -187,27 +168,6 @@ def readPrimer3Output(filename, task, queriesWorkingSet):
                 outputDict.clear()
             else:
                 print("ERROR")
-
-
-# TODO: not yet in use
-def readSangerBlastFiles():
-    sangerDict = {}
-    sangerDir = "DIGIToutput/SangerSequences"
-    for subdir, dirs, files in os.walk(sangerDir):
-        for oneFile in files:
-            filepath = os.path.join(subdir, oneFile)
-            if filepath.find(".tab") != -1:
-                f = filepath.split("/")[-1]
-                genome = f.split("_")[0]
-                with open(filepath, "r") as tabFile:
-                    for line in tabFile:
-                        if line.find("# Query:") != -1:
-                            metadata = line.split("/")[-1]
-                        if line[0] != "#":
-                            query = line.split("\t")[0]
-                            if query not in sangerDict:
-                                sangerDict[query] = SangerSeq(query, genome)
-                            sangerDict[query].__addBlastLine__(genome, line)
 
 
 def runFilterfasta(queriesWorkingSet):
