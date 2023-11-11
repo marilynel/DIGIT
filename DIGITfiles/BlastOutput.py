@@ -1,16 +1,11 @@
 '''
-BlastOutput is a class that parses and stores data generated from a Blast search. The Blast
-output must be in tab-
-delimited format (-outfmt 7). Results are stored as Query objects in a struct with a group ID,
-path to an output
-directory, a list of all the searched for queries, and a dictionary containing every hit found
-within the Blast
+BlastOutput is a class that parses and stores data generated from a Blast search. The Blast output must be in tab-
+delimited format (-outfmt 7). Results are stored as Query objects in a struct with a group ID, path to an output
+directory, a list of all the searched for queries, and a dictionary containing every hit found within the Blast
 search(es) of interest.
 
-For DIGIT, we are focusing on sequences Blasted against maize reference genomes A188v1, B73v5,
-and W22v2. This class is
-used to parse the results of Blasting both initial flanking sequences and sanger sequencing
-results. The hits dictionary
+For DIGIT, we are focusing on sequences Blasted against maize reference genomes A188v1, B73v5, and W22v2. This class is
+used to parse the results of Blasting both initial flanking sequences and sanger sequencing results. The hits dictionary
 within BlastOutput will be structered thusly within this framework:
 
     self.hits = {
@@ -46,6 +41,7 @@ class BlastOutput:
         self.bYearFamilyDict = {}
         self.__lookupFamilyAllele__()
 
+
     def __fillBlastOutputObject__(self, b73only, primers):
         # Driver to populate BlastOutputObject and sort data to find "best" hit; writes data to JSON
         self.__parseBlastOutputFiles__(b73only, primers)
@@ -53,12 +49,14 @@ class BlastOutput:
         self.__pickGenome__()
         self.__allBlastOutputDataToJson__()
 
+
     def __goThroughFiles__(self, filepath):
         filename = filepath.split("/")[-1]
         genome = filename.split("_")[0]
         if genome not in self.hits:
             self.hits[genome] = {}
             self.__readBlastFile__(genome, filepath)
+
 
     def __parseBlastOutputFiles__(self, b73only, primers):
         # Finds relevant blast .tab files.
@@ -86,9 +84,9 @@ class BlastOutput:
                         if filepath.find("Primer") != -1 and filepath.find("B73") != -1:
                             self.__goThroughFiles__(filepath)
 
+
     def __lookupFamilyAllele__(self):
-        # Reads file and creates dictionary of family : allele associations for reference. There
-        # may be multiple
+        # Reads file and creates dictionary of family : allele associations for reference. There may be multiple
         # families that represent one allele.
         with open("DIGITfiles/YearB2022FlankingSequenceFamilyData", "r") as familyfile:
             familyfile.readline()
@@ -97,6 +95,7 @@ class BlastOutput:
                 if allele not in self.bYearFamilyDict:
                     self.bYearFamilyDict[allele] = []
                 self.bYearFamilyDict[allele].append(int(family.strip()))
+
 
     def __readBlastFile__(self, genome, filename):
         # Parses blast .tab files for data relevant to project.
@@ -108,7 +107,7 @@ class BlastOutput:
                 if line[0] == '#':
                     blastData = line.split(' ')
                     if blastData[1] == "Query:":
-                        qName = blastData[2].strip()
+                        qName =  blastData[2].strip()
                     if blastData[2] == "hits":
                         numHits = int(blastData[1])
                     if numHits == 0:
@@ -126,6 +125,7 @@ class BlastOutput:
                         self.hits[genome][newQuery.query] = []
                     self.hits[genome][newQuery.query].append(newQuery)
 
+
     def __makeListOfQueries__(self):
         # List of query names as strings. Don't remember the purpose but I'm sure it's important.
         listQueries = []
@@ -136,9 +136,9 @@ class BlastOutput:
                 self.__setBestQuery__(genome, allele)
         return listQueries
 
+
     def __setBestQuery__(self, genome, query):
-        # Identifies the best query hit of a genome and calculates the percent difference in bit
-        # score between the best
+        # Identifies the best query hit of a genome and calculates the percent difference in bit score between the best
         # and second best hit.
         bestQuery = self.hits[genome][query][0]
         secondBestQuery = None
@@ -147,15 +147,13 @@ class BlastOutput:
                 secondBestQuery = bestQuery
                 bestQuery = self.hits[genome][query][i]
             elif self.hits[genome][query][i].bitScore <= bestQuery.bitScore:
-                if not secondBestQuery or self.hits[genome][query][
-                    i].bitScore >= secondBestQuery.bitScore:
+                if not secondBestQuery or self.hits[genome][query][i].bitScore >= secondBestQuery.bitScore:
                     secondBestQuery = self.hits[genome][query][i]
 
         perDiff = -1
         if secondBestQuery:
             try:
-                perDiff = abs((((bestQuery.bitScore - secondBestQuery.bitScore) / (
-                            bestQuery.bitScore + secondBestQuery.bitScore)) / 2) * 100)
+                perDiff = abs((((bestQuery.bitScore - secondBestQuery.bitScore)/(bestQuery.bitScore + secondBestQuery.bitScore)) / 2) * 100)
             except:
                 perDiff = -1
 
@@ -164,11 +162,10 @@ class BlastOutput:
                 self.hits[genome][query][i].bestAlleleForGenome = True
                 self.hits[genome][query][i].percentDiff = perDiff
 
+
     def __pickGenome__(self):
-        # Finds the prefferred genome for an allele and identifies the hit that will be used in
-        # the working set later on
-        # (bestHitForAllele). Best bit score is chosen first, then results are prioritied in
-        # genome order B73, W22, then
+        # Finds the prefferred genome for an allele and identifies the hit that will be used in the working set later on
+        # (bestHitForAllele). Best bit score is chosen first, then results are prioritied in genome order B73, W22, then
         # A188.
         bestDict = {}
         for genome in self.hits:
@@ -198,12 +195,13 @@ class BlastOutput:
             else:
                 print("ok")
 
+
     def __allBlastOutputDataToJson__(self):
         # Writes contents of BlastOutput object to JSON file.
-        with open(f"{self.outputDir}/QueryData/JSONfiles/AllBlastHits_{self.groupID}.json",
-                  "w") as outfile:
+        with open(f"{self.outputDir}/QueryData/JSONfiles/AllBlastHits_{self.groupID}.json", "w") as outfile:
             outfile.write(self.__toJSON__())
         return
+
 
     def __toJSON__(self):
         # For converting BlastOutput object to json object.

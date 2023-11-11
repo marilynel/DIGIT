@@ -1,6 +1,5 @@
 '''
-This class interfaces with the record list of primers that have previously been identified and
-named, in order to avoid
+This class interfaces with the record list of primers that have previously been identified and named, in order to avoid
 renaming and misidentifying primers.
 '''
 
@@ -14,6 +13,7 @@ class PrimerIDs:
                 self.listOfPrimers.append(line.strip())
 
         self.numPrimers = len(self.listOfPrimers) + 1
+
 
     def __append__(self, primerName):
         self.listOfPrimers.append(primerName)
@@ -29,6 +29,7 @@ class PrimerIDs:
             return result
         else:
             raise StopIteration
+
 
     def __rewriteRecordFile__(self):
         with open("DIGITfiles/compListPreviousPrimers", "w") as outfile:

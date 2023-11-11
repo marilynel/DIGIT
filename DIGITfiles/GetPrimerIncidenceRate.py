@@ -1,14 +1,16 @@
 '''
-GetPrimerIncidenceRate.py creates a csv file out of number of times each primer occurs in each of the genomes, A188,
-B73, and W22.
+GetPrimerIncidenceRate.py:
+    1.  Parses output from Primer Blast in step 4 (VerifyPrimers.py)
+    2.  Updates QueriesWorkingSet to indicate if the primer occurs within the predicted sequence or not.
+    3.  Creates a CSV file totalling the number of times each primer occurs in each of the genomes, A188, B73, and W22.
 
 Written by: Marilyn Leary 2023
 
-    Input:
+Input:
     flankseq (sys.argv[1])  String representing the Flanking Sequence Set of interest. Should match with a subfolder of
                             DIGIToutput/FlankingSequences
 
-    Output:
+Output:
     Three Blast output files with path and naming convention:
         DIGIToutput/FlankingSequences/<flankseq>/PrimerData/<flankseq>_PrimerIncidenceRate.csv
 '''
@@ -35,8 +37,6 @@ def main():
     workingQueriesJsonFile = f"DIGIToutput/FlankingSequences/{flankseq}/QueryData/JSONfiles/WorkingSet_{flankseq}.json"
     queriesWorkingSet = QueriesWorkingSet()
     queriesWorkingSet.__createQueryStructFromJson__(workingQueriesJsonFile)
-
-    primerBlastResults.__allBlastOutputDataToJson__()
 
     primerDict = {}
 
@@ -68,6 +68,10 @@ def main():
                     # wildtype sequence
                     if lowHitCoor >= lowHitQuer and higHitCoor <= higHitQuer:
                         primerDict[primerName][genome]["anyHitInsideOgCoor"] = True
+                        if primerName == queriesWorkingSet.workingSet[allele].primerNameLeft:
+                            queriesWorkingSet.workingSet[allele].primerLeftInOgWtCoor = True
+                        if primerName == queriesWorkingSet.workingSet[allele].primerNameRight:
+                            queriesWorkingSet.workingSet[allele].primerRightInOgWtCoor = True
 
     with open(f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData/IncidenceRate.csv", "w") as outfile:
         outfile.write(f"PrimerID,Genome,NumHitsInGenome,PrimerOccursInPredictedWTSeq,Genome,NumHitsInGenome,PrimerOcc" +
@@ -78,6 +82,7 @@ def main():
                 outfile.write(f"{genome},{primerDict[primer][genome]['numHits']}," +
                               f"{primerDict[primer][genome]['anyHitInsideOgCoor']},")
             outfile.write(f"\n")
+    queriesWorkingSet.__printToJson__(f"DIGIToutput/FlankingSequences/{flankseq}/QueryData", flankseq)
 
 
 if __name__ == '__main__':

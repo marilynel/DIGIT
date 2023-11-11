@@ -98,8 +98,7 @@ def runBlast():
         ]
 
         makeDirectories(initialDirs)
-        # filesExist(f"DIGIToutput/FlankingSequences/{
-        # flankseq}/BlastOutput/FlankingSequenceBlast", ["tab"])
+
         callBlastScript(
             f"PutFlankingSequenceFilesHere/{fastaFile}",
             f"DIGIToutput/FlankingSequences/{flankseq}/BlastOutput/FlankingSequenceBlast",
@@ -111,7 +110,7 @@ def runBlast():
             f"sequences and running them against Primer3.\n")
         print(
             f"Output files for Blast results will be located in the DIGIToutput/FlankingSequences/{flankseq}/BlastO" +
-            f"utput directory.\n")
+            f"utput/FlankingSequenceBlast directory.\n")
         print(f"Goodbye.\n")
         logging.info(f"\tRunning callBlastScript() with {flankseq}")
     else:
@@ -153,6 +152,13 @@ def runSequencesFromBlast():
             f"your jobs, enter 'qstat' in the command line. Running time may vary wildly.\n")
 
         print(f"\nResults will be saved in DIGIToutput/FlankingSequences/{flankseq}/QueryData")
+        print(f"\nParsed data for all blast results:\t/JSONfiles/AllBlastHits_{flankseq}.json")
+        print(f"Working set of \"best\" queries:\t\t/JSONfiles/WorkingSet_{flankseq}.json")
+        print(f"CSV version of working set:\t\t/CSVfiles/WorkingSet_{flankseq}.csv")
+        print(f"GFF of working set:\t\t\t/GFFfiles/WorkingSet_{flankseq}.gff")
+        print(f"Primer3 input file:\t\t\t/Primer3/FindingPrimers/Primer3Input_{flankseq}.txt")
+        print(
+            f"Primer3 output will appear as:\t\t/Primer3/FindingPrimers/Primer3Output_{flankseq}.txt")
         logging.info(f"\tRunning SequencesFromBlast.py with {flankseq}")
 
 
@@ -186,9 +192,15 @@ def runGetPrimersAndVerify():
             f"ay take a while to run. To check the status of your jobs, enter 'qstat' in the command line. Running " +
             f"time may vary wildly.\n")
 
+        print(f"\nResults will be saved in DIGIToutput/FlankingSequences/{flankseq}/QueryData/")
+
+        print(f"Updated working set of \"best\" queries:\t\t/JSONfiles/WorkingSet_{flankseq}.json")
+        print(f"Updated CSV version of working set:\t\t/CSVfiles/WorkingSet_{flankseq}.csv")
         print(
-            f"\nResults will be saved in DIGIToutput/FlankingSequences/{flankseq}/QueryData/Primer3/VerifyingPrimer" +
-            f"s/and in updated WorkingSet file in DIGIToutput/FlankingSequences/{flankseq}/QueryData/JSONfiles/")
+            f"Primer3 verification input file:\t\t/Primer3/VerifyingPrimers/Primer3VerificationInput_{flankseq}.txt")
+        print(
+            f"Primer3 verification output will appear as:\t/Primer3/VerifyingPrimers/Primer3VerificationOutput_{flankseq}.txt")
+
         logging.info(f"\tRunning GetPrimers.py with {flankseq}")
 
 
@@ -202,9 +214,15 @@ def runVerifyPrimers():
         print(f"Parsing Primer3 wildtype verification results.")
 
         subprocess.run(["python3", "DIGITfiles/VerifyPrimers.py", f"{flankseq}"])
+        print(f"Output will be in DIGIToutput/FlankingSequences/{flankseq}/ directory.")
+
+        print(f"\nPrimer data:\t\t\t\t/PrimerData/PrimerResults_{flankseq}.csv")
+        print(f"Failed primer data:\t\t\t/PrimerData/FailedPrimers_{flankseq}.csv")
+        print(f"Blast output files:\t\t\t/BlastOutput/PrimerBlast/")
         print(
-            f"Output will be in DIGIToutput/FlankingSequences/{flankseq}/ directory. For a consise list of the prim" +
-            f"ers with relevant information, go to DIGIToutput/FlankingSequences/{flankseq}/PrimerData/).")
+            f"Updated working set of \"best\" queries:\t/QueryData/JSONfiles/WorkingSet_{flankseq}.json")
+        print(f"Updated CSV version of working set:\t/QueryData/CSVfiles/WorkingSet_{flankseq}.csv")
+
         logging.info(f"\tRunning VerifyPrimers.py with {flankseq}")
 
 
@@ -216,6 +234,17 @@ def findNumPrimersInDB():
         filesExist(f"DIGIToutput/FlankingSequences/{flankseq}/PrimerData/", ["csv"])
         subprocess.run(["python3", "DIGITfiles/GetPrimerIncidenceRate.py", f"{flankseq}"])
         logging.info(f"\tRunning GetPrimerIncidenceRate.py with {flankseq}")
+
+        print(f"Output will be in DIGIToutput/FlankingSequences/{flankseq}/ directory.")
+        print(f"\nPrimer incidence rates per genome:\t\t/PrimerData/IncidenceRate.csv")
+        print(
+            f"Updated working set of \"best\" queries:\t\t/QueryData/JSONfiles/WorkingSet_{flankseq}.json")
+        print(
+            f"Updated CSV version of working set:\t\t/QueryData/CSVfiles/WorkingSet_{flankseq}.csv")
+    else:
+        print(
+            f"\nFiles do not exist to support this action. Please go back and complete step 4 with Primer blast opt" +
+            f"ion.")
 
 
 def showSangerMenu():
@@ -266,12 +295,14 @@ def main():
     print(f"Please select from the following menu options:\n")
     print(
         f"(1) Blast a collection of flanking sequences against maize genomes A188v1, B73v5, and W22v2")
-    print(f"(2) Parse Blast results and find primers")
-    print(f"(3) Parse primer data and run verification")
+    print(f"(2) Parse Blast results and create and submit input files for Primer3")
+    print(f"(3) Parse Primer3 output data and begin Primer3 verification")
     print(
-        f"(4) Check verification for any issues, produce primer dataset, and Blast primer dataset against all three" +
-        f" genomes")
-    print(f"(5) Check frequency of primers in genomes")
+        f"(4) Check Primer3 verification for any issues, produce primer dataset, and (optional) Blast primer datase" +
+        f"t against all three genomes")
+    print(
+        f"(5) Check frequency of primers in genomes and make sure primer occurs within predicted sequence wildtype " +
+        f"coordinates.")
     print(f"(6) Go to Sanger Sequence Parsing menu")
     print(f"(7) Look up data for specific allele, primer, or sanger sequence")
     print(f"(8) Remove extraneous sge files from directory")

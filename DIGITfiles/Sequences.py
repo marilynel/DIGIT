@@ -1,3 +1,10 @@
+'''
+Class Sequences
+
+This class stores the DsGFP sequences for both the plus and minus strand, as well as additional supporting information
+for Primer3 input formation.
+'''
+
 class Sequences:
     def __init__(self):
         # >Ds-GFP_TAG21 (2165 bp)

@@ -110,6 +110,9 @@ class Query:
         self.primerRightOrdered = False
         self.primerRightSangered = False
 
+        self.primerLeftInOgWtCoor = False
+        self.primerRightInOgWtCoor = False
+
         self.bYearFamilies = None
 
     def __findBYearFamilies__(self, familyDict):
@@ -238,16 +241,24 @@ class Query:
         self.bYearFamilies = jsonObject["bYearFamilies"]
         self.bestAlleleForGenome = jsonObject["bestAlleleForGenome"]
         self.bestHitForAllele = jsonObject["bestHitForAllele"]
+        self.primerLeftInOgWtCoor = jsonObject["primerLeftInOgWtCoor"]
+        self.primerRightInOgWtCoor = jsonObject["primerRightInOgWtCoor"]
 
     def __workingSetCsvLine__(self):
         return f"{self.query},{self.genome},{self.bYearFamilies},{self.chromosome}," \
                f"{self.perIdentity}," + \
-               f"{self.alignmentLength},{self.mismatches},{self.gapOpens},{self.qStart},{self.qEnd},{self.sStart}," + \
-               f"{self.sEnd},{self.eValue},{self.bitScore},{self.numHits},{self.percentDiff},{self.strand}," + \
-               f"{self.qStartStatus},{self.primerNameLeft},{self.primerSequenceLeft},{self.primerLeftProductSize}," + \
-               f"{self.primerPenaltyLeft},{self.primerLeftOrdered},{self.primerLeftSangered},{self.primerNameRight}," + \
-               f"{self.primerSequenceRight},{self.primerRightProductSize},{self.primerPenaltyRight}," + \
-               f"{self.primerRightOrdered},{self.primerRightSangered},{self.primerPairProductSize}," + \
+               f"{self.alignmentLength},{self.mismatches},{self.gapOpens},{self.q
+        Start},{self.qEnd},{self.sStart}," + \
+               f"{self.sEnd},{self.eValue},{self.bitScore},{self.numHits},{self.percentDiff},
+                 {self.strand}," + \
+               f"{self.qStartStatus},{self.primerNameLeft},{self.primerSequenceLeft},
+                 {self.primerLeftProductSize}," + \
+               f"{self.primerPenaltyLeft},{self.primerLeftOrdered},{self.primerLeftSangered},
+                 {self.primerNameRight}," + \
+               f"{self.primerSequenceRight},{self.primerRightProductSize},
+                 {self.primerPenaltyRight}," + \
+               f"{self.primerRightOrdered},{self.primerRightSangered},
+                 {self.primerPairProductSize}," + \
                f"{self.primerPairPenalty},\n"
 
     def __validate__(self, selfObj, otherObj):
@@ -272,10 +283,12 @@ class Query:
                 self.primerRightProductSize = p3obj.primerRightProductSize
                 self.primerPenaltyRight = p3obj.primerPenaltyRight
                 self.tmRight = p3obj.tmRight
+
         elif p3obj.task == "check_primers":
             self.primerPairProductSize = p3obj.primerPairProductSize
             self.primerPairPenalty = p3obj.primerPairPenalty
             self.tmPair = p3obj.tmPair
+
         else:
             print(f"Something went wrong with {self.primerNameRight}.")
 
@@ -301,53 +314,59 @@ class Query:
 
     def __lookupPrimerPrintLeft__(self):
         print()
-        print(f"Left Primer Name\t{self.primerNameLeft}")
-        print(f"Genome\t\t\t{self.genome}")
-        print(f"Chromosome\t\t{self.chromosome}")
-        print(f"Primer Sequence\t\t{self.primerSequenceLeft}")
-        print(f"Primer Ordered\t\t{self.primerLeftOrdered}")
-        print(f"Primer Sangered\t\t{self.primerLeftSangered}")
-        print(f"Primer Product Size\t{self.primerLeftProductSize} bp")
-        print(f"Primer Penalty\t\t{self.primerPenaltyLeft}")
-        print(f"Primer TM\t\t{self.tmLeft}")
+        print(f"Left Primer Name\t\t{self.primerNameLeft}")
+        print(f"Genome\t\t\t\t{self.genome}")
+        print(f"Chromosome\t\t\t{self.chromosome}")
+        print(f"Primer Sequence\t\t\t{self.primerSequenceLeft}")
+        print(f"Primer Ordered\t\t\t{self.primerLeftOrdered}")
+        print(f"Primer Sangered\t\t\t{self.primerLeftSangered}")
+        print(f"Primer Product Size\t\t{self.primerLeftProductSize} bp")
+        print(f"Primer Penalty\t\t\t{self.primerPenaltyLeft}")
+        print(f"Primer TM\t\t\t{self.tmLeft}")
         if self.sideMatchGFP3UTR == "left":
-            print(f"Primer Matches With\tGFP3UTR")
+            print(f"Primer Matches With\t\tGFP3UTR")
         if self.sideMatch3DsgG == "left":
-            print(f"Primer Matches With\t3DsgG")
-        print(f"**Incidence placeholder**")
+            print(f"Primer Matches With\t\t3DsgG")
+        print(f"Primer Occurs Inside Pred'd")
+        print(f"  Best Insertion Site\t\t{self.primerLeftInOgWtCoor}")
         print()
 
     def __lookupPrimerPrintRight__(self):
         print()
-        print(f"Right Primer Name\t{self.primerNameRight}")
-        print(f"Genome\t\t\t{self.genome}")
-        print(f"Chromosome\t\t{self.chromosome}")
-        print(f"Primer Sequence\t\t{self.primerSequenceRight}")
-        print(f"Primer Ordered\t\t{self.primerRightOrdered}")
-        print(f"Primer Sangered\t\t{self.primerRightSangered}")
-        print(f"Primer Product Size\t{self.primerRightProductSize} bp")
-        print(f"Primer Penalty\t\t{self.primerPenaltyRight}")
-        print(f"Primer TM\t\t{self.tmRight}")
+        print(f"Right Primer Name\t\t{self.primerNameRight}")
+        print(f"Genome\t\t\t\t{self.genome}")
+        print(f"Chromosome\t\t\t{self.chromosome}")
+        print(f"Primer Sequence\t\t\t{self.primerSequenceRight}")
+        print(f"Primer Ordered\t\t\t{self.primerRightOrdered}")
+        print(f"Primer Sangered\t\t\t{self.primerRightSangered}")
+        print(f"Primer Product Size\t\t{self.primerRightProductSize} bp")
+        print(f"Primer Penalty\t\t\t{self.primerPenaltyRight}")
+        print(f"Primer TM\t\t\t{self.tmRight}")
         if self.sideMatchGFP3UTR == "right":
-            print(f"Primer Matches With\tGFP3UTR")
+            print(f"Primer Matches With\t\tGFP3UTR")
         if self.sideMatch3DsgG == "right":
-            print(f"Primer Matches With\t3DsgG")
-        print(f"**Incidence placeholder**")
+            print(f"Primer Matches With\t\t3DsgG")
+        print(f"Primer Occurs Inside Pred'd")
+        print(f"  Best Insertion Site\t\t{self.primerRightInOgWtCoor}")
         print()
 
     def __leftPrimerDataLine__(self):
         leftPrimerMatch, rightPrimerMatch = self.__primerSides__()
         return f"{self.primerNameLeft},{self.query},{self.genome},{self.primerSequenceLeft}," \
                f"{leftPrimerMatch}," + \
-               f"{self.primerLeftProductSize},{self.primerPairProductSize},{self.tmLeft},{self.primerPenaltyLeft}," + \
-               f"{self.primerPairPenalty},{self.bitScore},{self.numHits},{self.qStartStatus},{self.primerLeftOrdered},{self.primerLeftSangered}\n"
+               f"{self.primerLeftProductSize},{self.primerPairProductSize},{self.t
+        mLeft},{self.primerPenaltyLeft}," + \
+               f"{self.primerPairPenalty},{self.bitScore},{self.numHits},{self.qStartStatus},
+                 {self.primerLeftOrdered},{self.primerLeftSangered}\n"
 
     def __rightPrimerDataLine__(self):
         leftPrimerMatch, rightPrimerMatch = self.__primerSides__()
         return f"{self.primerNameRight},{self.query},{self.genome},{self.primerSequenceRight}," \
                f"{rightPrimerMatch}," + \
-               f"{self.primerRightProductSize},{self.primerPairProductSize},{self.tmRight},{self.primerPenaltyRight}," + \
-               f"{self.primerPairPenalty},{self.bitScore},{self.numHits},{self.qStartStatus},{self.primerRightOrdered},{self.primerRightSangered}\n"
+               f"{self.primerRightProductSize},{self.primerPairProductSize},{self.tm
+        Right},{self.primerPenaltyRight}," + \
+               f"{self.primerPairPenalty},{self.bitScore},{self.numHits},{self.qStartStatus},
+                 {self.primerRightOrdered},{self.primerRightSangered}\n"
 
     def __primerSides__(self):
         leftPrimerMatch, rightPrimerMatch = "", ""

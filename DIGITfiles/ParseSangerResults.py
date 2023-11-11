@@ -1,7 +1,10 @@
 '''
-Parses results of Blasting Sanger sequences against the selected maize genomes. Identifies the "best" hit for each
-Sanger query (according to the same prioritization scheme as the flanking sequences, see QueriesWorkingSet.py) and
-compares that result to the original flanking sequence data, if available.
+ParseSangerResults.py:
+    1.  Parses results of Blasting Sanger sequences against maize genomes A188, B73, and W22.
+    2.  Identifies the "best" hit for each Sanger query according to the same prioritization scheme as the flanking
+        sequences (see QueriesWorkingSet.py).
+    3.  Compares results to the original flanking sequence data, if available.
+    4.  Saves data in CSV and JSON files for reference.
 
 Written by: Marilyn Leary 2023
 '''

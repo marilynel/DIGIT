@@ -1,3 +1,21 @@
+'''
+SequencesFromBlast.py:
+    1.  Parses flanking sequence blast output files (.tab format only).
+    2.  Aggregates data for all hits (occurances of the blasted sequence anywhere in the
+    reference genome).
+    3.  Identifies the "best" hit for each query according to the following criteria:
+        -   First, the hit with the best bit score over all is chosen
+        -   If bit scores are equivalent across genomes, the best score is chosen based on
+        reference genome where B73 is
+            preferred, then W22, then A188
+        -   If there are multiple hits within the same preferred genome with the same bit score,
+        one hit is chosen at
+            random to be the best hit
+    4.  Produces working set of queries (QueriesWorkingSet object) based on #3, where each allele
+    only appears one time.
+    5.  Composes and submits Primer3 input files.
+'''
+
 import sys
 
 from BlastOutput import *
@@ -25,7 +43,7 @@ def main():
         genomeSpec = "B73"
         newFlankseq += "B73Only"
         x = True
-        print(f"butts\t{x}")
+
     necessaryDirs = [
         f"{outputDir}",
         f"{outputDir}/{newFlankseq}",
@@ -39,9 +57,9 @@ def main():
     ]
 
     makeDirectories(necessaryDirs)
-    print("abc")
+
     # Read Blast output data into allQueries BlastOutput Object
-    allQueries = BlastOutput(flankseq, "FlankingSequences")
+    allQueries = BlastOutput(newFlankseq, "FlankingSequences")
     allQueries.__fillBlastOutputObject__(x, False)
 
     # Identify "best" hits for each allele and use to create a QueriesWorkingSet Object,
@@ -60,7 +78,8 @@ def main():
     queriesWorkingSet.__writeP3InputFile__(inputFile, "generic")
 
     runPrimer3(inputFile, newFlankseq,
-               f"{outputDir}/{newFlankseq}/QueryData/Primer3/FindingPrimers/Primer3Output_{newFlankseq}.txt")
+               f"{outputDir}/{newFlankseq}/QueryData/Primer3/FindingPrimers/Primer3Output_{
+    newFlankseq}.txt")
 
     queriesWorkingSet.__printToJson__(f"{outputDir}/{newFlankseq}/QueryData", newFlankseq)
 

@@ -1,58 +1,80 @@
-Box
--   check upload/download file instructions on Box
--   make sure file formats are descriped for
-    ->  Flanking Sequence fasta files
-    ->  compListPreviousPrimers
-    ->  Sanger Outputfiles
-    ->  ordered primers list 
--   describe folder file structure
--   add instructions on naming conventions for
-    ->  flanking sequence fasta files
-    ->  alleles/queries
-    ->  primers
-    ->  sanger sequences
-    ->  sanger sequence primers
 
-GFF file formats
--   note in attributes if sequence i sfrom sanger 
+Welcome to the project! Please feel free to reach out to me through github (https://github.com/marilynel) or email 
+(marilyneleary@gmail.com) if anything seems confusing. Below are tasks that need to be completed, sorted into important
+and would-be-nice-to-have categories.
 
-
-SGE
--   add function to look into sge files for errors
--   report if there are errors
-
-
-Ordered primers
--   add list of primers that are ordered/tested/etc
--   look into adding attribute to primer object (is there a primer object?) indicating ordered/tested status
--   
-
-B73 only search
--   make sure all steps complete ok for regular flanking sequences
--   implement B73 only steps for sanger sequences
-
-General
--   check to make sure the correct files exist to do a step (current set up does not work)
--   look in folder for dbs and blast/filterfasta only against those
--   catch if user tries to do something prematurely
--   give user an option to go back if they don't see the files they want
--   implement lookup option for specific query or primer or sangerseq
--   fix file permissions issue somehow???
-
-Blasting primers
--   check that primer is inside WT coordinates at least once
--   report if yes/no (may need to just clean up output)
-
-
-TODO: do sanger stuff first!!!
-Sanger sequences
--   check if sequences occur in two seqs data (naming convention changes)
--   put all data on one paper
--   look for sanger seqs that have no blast matches
-
-lookup: ask for allele, get family, and vice cersa
+Some things to note:
+->  The infrastructure for completing the flanking sequence steps for B73 only (meaning, only parsing and considering 
+    data from the blast results against the B73 reference genome) is present but will need to be tweaked to get it to 
+    work.
+->  Lookup (step 7) is only usable for primer and query data, not yet for sanger data
+->  There is currently no data in the PutOrderedPrimersHere/SucessfulPrimersFromSanger file. You may want to fill this 
+    file with Sanger sequences from the sanger sequence data submitted through PutSangerOutputFilesHere/
+->  Be VERY CAREFUL if you augment the code for anything related to Primer3; I would highly recommend drawing a diagram 
+    for yourself to reference. It is very easy to mix up side/strand/sequence data, and Primer3 will still run correctly 
+    even if you put in inconsistent or nonsense data.
+->  Use "chmod 777 {name}" to change permissions for a file or directory
+->  Output will appear in DIGIToutput/ directory, sorted by FlankingSequence/ and SangerSequence/ data. Files should 
+    appear within that file structure intuitively
+->  See box notes or contact CQLS to upload/download large amounts of data
+->  I was not able to get git working on cqls; my backups were made by copying the application to my computer and 
+    uploading to github from there
+->  I am sure I forgot something. Please do reach out if you have questions or if something doesn't make sense!
 
 
 
-Ask John:
--   notify when allele has no hits in a genome?
+
+
+*****************
+*   TODO list   *
+*****************
+
+Important:
+-   Can step 2 be completed for B73 only? 
+    ->  Not reading the data from blast output file for some reason!
+-   Can step 3 be completed for B73 only? 
+-   Can step 4 be completed for B73 only? 
+-   Can step 5 be completed for B73 only? 
+-   Can step 6.1 be completed for B73 only? 
+-   Can step 6.2 be completed for B73 only? 
+-   Can P3 input be created for B73 only on step 2?
+-   Will the application notify the user if files do not exist for a task or a task is not completable at this stage?
+-   Can the "lookup" step (7) be completed for Sanger sequence data?
+-   Are Sanger sequences with no hits in any genome noted in data output files?
+    ->  Unsure on this. Currently if the sequence is not blastable, "bestSangerMatchesBestOriginal" and 
+        "sangerSequenceFoundInGenome" are both set to True. They need to be reset to False if "blastable" is false
+-   Are primers with no blast hits noted in query Workingset csv file?
+    ->  No, but they are correctly noted in JSON file so data has been updated correctly
+-   Do primer output files note if the ordered sequence does not match the predicted sequence?
+    ->  No, they do not
+-   Does the sanger GFF output file note attribute as genome?
+    ->  No
+-   Are the primer GFF files separated by genome?
+-   Is there a GFF file created for the primers?
+    ->  No
+-   Can list of sanger'd sequences be appended by sanger results?
+-   Are there instructions for naming conventions on box for:
+    ->  flanking sequence files
+    ->  sanger sequence files
+    ->  flanking sequence family data
+-   Are there instructions on box for:
+    ->  adding to ordered primers list
+    ->  uploading sanger sequences
+-   Is there a description on box on where to find data?
+-   Are there instructions on how to set file permissions?
+-   Does SangerSeq.py handle two of the same allele in an order?
+-   Are these reported in primer csv file:
+    ->  primer occur in genome blast
+
+
+Nice to have but not necessary:
+-   Does all Sanger Sequence data go into one file?
+-   Can the user go back and reselect an option if they don't see the files/subdirectory they want?
+-   Can sanger sequence be matched to the primer that was predicted and ordered?
+-   Is it possible to wrap step 4 in an SGE wrapper?
+-   Is it possible to wrap step 5 in an SGE wrapper?
+-   Is there a notification if any SGE output files contain error messages?
+-   Can GetPrimerIncidenceRate.py be refactored to put a big chunk in QueriesWorkingSet.py?
+-   Can RunBlast.sh and RunPrimerBlast.sh be refactored into one script?
+-   Can checkCoordinates() in Utils.py be refactored into Query.py?
+-   Can "IncidenceRate.csv" filename be changed to be more accurate?
